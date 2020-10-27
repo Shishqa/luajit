@@ -1,5 +1,5 @@
 *.[oa]
-*.so
+*.so*
 *.obj
 *.lib
 *.exp
@@ -9,3 +9,11 @@
 *.dmp
 *.swp
 .tags
+
+# CMake generated artefacts
+Makefile
+CMakeFiles
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+luajit.pc

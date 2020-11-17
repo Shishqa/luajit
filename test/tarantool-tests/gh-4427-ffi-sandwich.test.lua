@@ -1,22 +1,30 @@
-#!/usr/bin/env tarantool
+#!/usr/bin/env luajit
 
 if #arg == 0 then
-  require('utils').selfrun(arg, {
+
+  local utils = require('utils')
+
+  -- Disabled on *BSD due to #4819.
+  utils.skipcond(jit.os == 'BSD', 'Disabled due to #4819')
+
+  utils.selfrun(arg, {
     {
-      arg = {
+      arg  = {
         1, -- hotloop (arg[1])
         1, -- trigger (arg[2])
       },
-      res = tostring(3), -- hotloop + trigger + 1
-      msg = 'Trace is aborted',
+      test = 'is',
+      res  = tostring(3), -- hotloop + trigger + 1
+      msg  = 'Trace is aborted',
     },
     {
-      arg = {
+      arg  = {
         1, -- hotloop (arg[1])
         2, -- trigger (arg[2])
       },
-      res = 'Lua VM re-entrancy is detected while executing the trace',
-      msg = 'Trace is recorded',
+      test = 'like',
+      res  = 'Lua VM re%-entrancy is detected while executing the trace',
+      msg  = 'Trace is recorded',
     },
   })
 end

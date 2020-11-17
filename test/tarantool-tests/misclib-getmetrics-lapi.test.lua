@@ -1,8 +1,11 @@
-#!/usr/bin/env tarantool
+#!/usr/bin/env luajit
 
 -- This is a part of tarantool/luajit testing suite.
 -- Major portions taken verbatim or adapted from the LuaVela testing suite.
 -- Copyright (C) 2015-2019 IPONWEB Ltd.
+
+-- Disabled on *BSD due to #4819.
+require('utils').skipcond(jit.os == 'BSD', 'Disabled due to #4819')
 
 local tap = require('tap')
 

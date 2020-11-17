@@ -1,4 +1,4 @@
-#!/usr/bin/env tarantool
+#!/usr/bin/env luajit
 
 -- Miscellaneous test for LuaJIT bugs
 local tap = require('tap')

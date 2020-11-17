@@ -19,3 +19,4 @@ compile_commands.json
 install_manifest.txt
 luajit-parse-memprof
 luajit.pc
+tests.ok

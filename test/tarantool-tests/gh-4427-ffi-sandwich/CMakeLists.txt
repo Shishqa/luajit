@@ -1,0 +1,1 @@
+BuildTestLib(libsandwich libsandwich.c)

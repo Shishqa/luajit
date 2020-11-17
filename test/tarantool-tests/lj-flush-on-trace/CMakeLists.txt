@@ -1,0 +1,1 @@
+BuildTestLib(libflush libflush.c)

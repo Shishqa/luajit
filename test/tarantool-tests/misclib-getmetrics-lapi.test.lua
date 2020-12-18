@@ -7,6 +7,9 @@
 -- Disabled on *BSD due to #4819.
 require('utils').skipcond(jit.os == 'BSD', 'Disabled due to #4819')
 
+-- FIXME: The test is temporarily disabled due to Tarantool failure.
+require('utils').skipcond(true, 'Temporarily disabled due to Tarantool failure')
+
 local tap = require('tap')
 
 local test = tap.test("lib-misc-getmetrics")

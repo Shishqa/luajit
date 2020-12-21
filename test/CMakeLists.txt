@@ -33,8 +33,10 @@ else()
 endif()
 
 add_subdirectory(tarantool-tests)
+add_subdirectory(PUC-Lua-5.1-tests)
 
 add_custom_target(${PROJECT_NAME}-test DEPENDS
+  PUC-Lua-5.1-tests
   tarantool-tests
 )
 

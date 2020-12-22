@@ -4,9 +4,10 @@
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 
 add_subdirectory(tarantool-tests)
+add_subdirectory(LuaJIT-test-cleanup)
 
 add_custom_target(${PROJECT_NAME}-test DEPENDS
-  tarantool-tests
+  tarantool-tests LuaJIT-test-cleanup
 )
 
 if(LUAJIT_USE_TEST)

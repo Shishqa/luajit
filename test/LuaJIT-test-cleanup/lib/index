@@ -5,4 +5,3 @@ string
 table
 coroutine
 ffi +ffi
-contents.lua

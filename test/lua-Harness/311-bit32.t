@@ -33,6 +33,10 @@ require 'tap'
 local profile = require'profile'
 local has_bit32 = _VERSION == 'Lua 5.2' or profile.compat52 or profile.has_bit32
 
+-- TODO: Enable these tests.
+plan(0)
+os.exit(0)
+
 if not bit32 then
     plan(1)
     nok(has_bit32, "no has_bit32")

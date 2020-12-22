@@ -27,6 +27,10 @@ See L<http://luajit.org/running.html>
 require'tap'
 local profile = require'profile'
 
+-- TODO: Enable these tests.
+plan(0)
+os.exit(0)
+
 if not jit or ujit then
     skip_all("only with LuaJIT")
 end

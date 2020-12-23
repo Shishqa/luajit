@@ -1,7 +1,6 @@
 arith.lua
 arith_jit.lua
 call.lua
-cat.lua
 comp.lua
 comp_jit.lua
 eq.lua
@@ -9,6 +8,5 @@ eq_jit.lua
 framegap.lua
 index.lua
 len.lua
-newindex.lua
 nomm.lua
 debuginfo.lua

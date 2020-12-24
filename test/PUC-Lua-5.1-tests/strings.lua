@@ -102,7 +102,18 @@ print('+')
 
 x = '"Ìlo"\n\\'
 assert(string.format('%q%s', x, x) == '"\\"Ìlo\\"\\\n\\\\""Ìlo"\n\\')
-assert(string.format('%q', "\0") == [["\000"]])
+-- LuaJIT since v2.0.0-beta6 has extension from Lua 5.2:
+-- string.format(): %q reversible.
+-- In Lua 5.1 string.format() does not accept string values
+-- containing embedded zeros, except as arguments to the q option.
+-- In Lua 5.2 '\0' is not handled differently from other
+-- control chars in string.format('%q', ...).
+-- See commit 7cc981c14067d4b0e774a6bfb0acfc2f5c911f0d
+-- (string.format("%q", str) is now fully reversible
+-- (from Lua 5.2).).
+-- See also https://github.com/tarantool/tarantool/issues/5710.
+-- Test is disabled for LuaJIT for now.
+-- assert(string.format('%q', "\0") == [["\000"]])
 assert(string.format("\0%c\0%c%x\0", string.byte("·"), string.byte("b"), 140) ==
               "\0·\0b8c\0")
 assert(string.format('') == "")
@@ -152,6 +163,9 @@ local function trylocale (w)
   return false
 end
 
+-- LuaJIT doesn't compare strings by `strcoll`, like Lua 5.1 does.
+-- Tests are disabled for LuaJIT.
+--[[
 if not trylocale("collate")  then
   print("locale not supported")
 else
@@ -166,6 +180,7 @@ else
   assert(string.gsub("·¡È…", "%u", "x") == "·xÈx")
   assert(string.upper"·¡È{xuxu}Á„o" == "¡¡…{XUXU}«√O")
 end
+--]]
 
 os.setlocale("C")
 assert(os.setlocale() == 'C')

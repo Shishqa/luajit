@@ -199,6 +199,12 @@ _G["xxx"] = 1
 assert(xxx==find("xxx"))
 print('+')
 
+-- In Lua 5.1 math.mod() is renamed to math.fmod() if build
+-- Lua 5.1 without flag `-DLUA_COMPAT_MOD`.
+-- LuaJIT also has math.fmod() instead math.mod() builtin.
+-- See also https://github.com/tarantool/tarantool/issues/5711.
+-- Test is disabled.
+--[=[
 a = {}
 for i=0,10000 do
   if math.mod(i,10) ~= 0 then
@@ -213,6 +219,7 @@ for i,v in pairs(a) do
 end
 assert(n.n == 9000)
 a = nil
+--]=]
 
 -- remove those 10000 new global variables
 for i=1,10000 do _G[i] = nil end

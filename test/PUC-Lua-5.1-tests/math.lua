@@ -100,7 +100,12 @@ assert(math.abs(-10) == 10)
 assert(eq(math.atan2(1,0), math.pi/2))
 assert(math.ceil(4.5) == 5.0)
 assert(math.floor(4.5) == 4.0)
-assert(math.mod(10,3) == 1)
+-- In Lua 5.1 math.mod() is renamed to math.fmod() if build
+-- Lua 5.1 without flag `-DLUA_COMPAT_MOD`.
+-- LuaJIT also has math.fmod() instead math.mod() builtin.
+-- See also https://github.com/tarantool/tarantool/issues/5711.
+-- Test is disabled.
+-- assert(math.mod(10,3) == 1)
 assert(eq(math.sqrt(10)^2, 10))
 assert(eq(math.log10(2), math.log(2)/math.log(10)))
 assert(eq(math.exp(0), 1))

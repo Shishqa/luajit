@@ -200,6 +200,12 @@ a,b = F(nil)==nil; assert(a == true and b == nil)
 
 function ID(x) return x end
 
+-- In Lua 5.1 math.mod() is renamed to math.fmod() if build
+-- Lua 5.1 without flag `-DLUA_COMPAT_MOD`.
+-- LuaJIT also has math.fmod() instead math.mod() builtin.
+-- See also https://github.com/tarantool/tarantool/issues/5711.
+-- Test is disabled.
+--[=[
 function f(t, i)
   local b = t.n
   local res = math.mod(math.floor(i/c), b)+1
@@ -236,5 +242,6 @@ repeat
   if math.mod(i,4000) == 0 then print('+') end
   i = i+1
 until i==c
+--]=]
 
 print'OK'

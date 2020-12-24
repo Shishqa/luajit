@@ -65,9 +65,16 @@ a = string.format(a, progname)
 prepfile(a)
 RUN('lua "-e " -- %s a b c', prog)
 
-prepfile"assert(arg==nil)"
-prepfile("assert(arg)", otherprog)
-RUN("lua -l%s - < %s", prog, otherprog)
+-- test 'arg' availability in libraries
+-- LuaJIT v2.1.0-beta3 has extension from Lua 5.3:
+-- The argument table `arg` can be read (and modified)
+-- by `LUA_INIT` and `-e` chunks.
+-- See commit 92d9ff211ae864777a8580b5a7326d5f408161ce
+-- (Set arg table before evaluating LUA_INIT and -e chunks.).
+-- See also https://github.com/tarantool/tarantool/issues/5686.
+-- prepfile"assert(arg==nil)"
+-- prepfile("assert(arg)", otherprog)
+-- RUN("lua -l%s - < %s", prog, otherprog)
 
 prepfile""
 RUN("lua - < %s > %s", prog, out)
@@ -89,26 +96,35 @@ prepfile[[
 RUN("lua - < %s > %s", prog, out)
 checkout("1\tnil\n")
 
+-- Version and status are printed in stdout instead stderr since
+-- LuaJIT-2.0.0-beta11 (as it is not an error message).
+-- See commit 0bd1a66f2f055211ef55834ccebca3b82d03c735
+-- (Print version and JIT status to stdout, not stderr.).
+-- This behavior is the same as in Lua 5.2.
+-- See also https://github.com/tarantool/tarantool/issues/5687.
 prepfile[[
 = (6*2-6) -- ===
 a
 = 10
 print(a)
 = a]]
-RUN([[lua -e"_PROMPT='' _PROMPT2=''" -i < %s > %s]], prog, out)
-checkout("6\n10\n10\n\n")
+-- Behavior is different for LuaJIT. See the comment above.
+-- RUN([[lua -e"_PROMPT='' _PROMPT2=''" -i < %s > %s]], prog, out)
+-- checkout("6\n10\n10\n\n")
 
 prepfile("a = [[b\nc\nd\ne]]\n=a")
 print(prog)
-RUN([[lua -e"_PROMPT='' _PROMPT2=''" -i < %s > %s]], prog, out)
-checkout("b\nc\nd\ne\n\n")
+-- Behavior is different for LuaJIT. See the comment above.
+-- RUN([[lua -e"_PROMPT='' _PROMPT2=''" -i < %s > %s]], prog, out)
+-- checkout("b\nc\nd\ne\n\n")
 
 prompt = "alo"
 prepfile[[ --
 a = 2
 ]]
-RUN([[lua "-e_PROMPT='%s'" -i < %s > %s]], prompt, prog, out)
-checkout(string.rep(prompt, 3).."\n")
+-- Behavior is different for LuaJIT. See the comment above.
+-- RUN([[lua "-e_PROMPT='%s'" -i < %s > %s]], prompt, prog, out)
+-- checkout(string.rep(prompt, 3).."\n")
 
 s = [=[ --
 function f ( x )
@@ -126,19 +142,29 @@ assert( a == b )
 =f( 11 )  ]=]
 s = string.gsub(s, ' ', '\n\n')
 prepfile(s)
-RUN([[lua -e"_PROMPT='' _PROMPT2=''" -i < %s > %s]], prog, out)
-checkout("11\n1\t2\n\n")
+-- Behavior is different for LuaJIT. See the comment above.
+-- RUN([[lua -e"_PROMPT='' _PROMPT2=''" -i < %s > %s]], prog, out)
+-- checkout("11\n1\t2\n\n")
 
 prepfile[[#comment in 1st line without \n at the end]]
 RUN("lua %s", prog)
 
+-- test loading and running bytecode files.
+-- Loading bytecode with an extra header (BOM or "#") is disabled
+-- for security reasons since LuaJIT-2.0.0-beta10.
+-- For more information see comment for lj_lex_setup()
+-- in <src/lj_lex.c>.
+-- Also see commit 53a285c0c3544ff5dea7c67b741c3c2d06d22b47
+-- (Disable loading bytecode with an extra header (BOM or #!).).
+-- See also https://github.com/tarantool/tarantool/issues/5691.
 prepfile("#comment with a binary file\n"..string.dump(loadstring("print(1)")))
-RUN("lua %s > %s", prog, out)
-checkout("1\n")
+-- RUN("lua %s > %s", prog, out)
+-- checkout("1\n")
 
 prepfile("#comment with a binary file\r\n"..string.dump(loadstring("print(1)")))
-RUN("lua %s > %s", prog, out)
-checkout("1\n")
+-- Behavior is different for LuaJIT. See the comment above.
+-- RUN("lua %s > %s", prog, out)
+-- checkout("1\n")
 
 -- close Lua with an open file
 prepfile(string.format([[io.output(%q); io.write('alo')]], out))

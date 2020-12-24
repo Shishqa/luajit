@@ -95,6 +95,10 @@ repeat
   assert(g(f) == 'a')
 until 1
 
+-- LuaJIT interprets a return from calling result of loadstring()
+-- with a new line number unlike Lua does.
+-- See also https://github.com/tarantool/tarantool/issues/5693.
+--[=[
 test([[if
 math.sin(1)
 then
@@ -149,7 +153,7 @@ end
 ]], {1,2,1,2,1,3})
 
 test([[for i=1,4 do a=1 end]], {1,1,1,1,1})
-
+--]=]
 
 
 print'+'
@@ -178,8 +182,13 @@ function f(a,b)
   local _, x = debug.getlocal(1, 1)
   local _, y = debug.getlocal(1, 2)
   assert(x == a and y == b)
-  assert(debug.setlocal(2, 3, "pera") == "AA".."AA")
-  assert(debug.setlocal(2, 4, "maçã") == "B")
+  -- f() function is called only from g(...) vararg function.
+  -- Lua 5.1 interprets ... in the vararg functions like additional
+  -- first argument unlike LuaJIT does.
+  -- This extension is from Lua 5.2.
+  -- See also https://github.com/tarantool/tarantool/issues/5694.
+  -- assert(debug.setlocal(2, 3, "pera") == "AA".."AA")
+  -- assert(debug.setlocal(2, 4, "maçã") == "B")
   x = debug.getinfo(2)
   assert(x.func == g and x.what == "Lua" and x.name == 'g' and
          x.nups == 0 and string.find(x.source, "^@.*db%.lua"))
@@ -208,11 +217,13 @@ function g(...)
   local feijao
   local AAAA,B = "xuxu", "mamão"
   f(AAAA,B)
-  assert(AAAA == "pera" and B == "maçã")
+  -- Test is disabled for LuaJIT for now. See comment in f().
+  -- assert(AAAA == "pera" and B == "maçã")
   do
      local B = 13
      local x,y = debug.getlocal(1,5)
-     assert(x == 'B' and y == 13)
+     -- Test is disabled for LuaJIT for now. See comment in f().
+     -- assert(x == 'B' and y == 13)
   end
 end
 
@@ -276,7 +287,8 @@ debug.sethook(function (e)
 end, "c")
 
 a:f(1,2,3,4,5)
-assert(X.self == a and X.a == 1   and X.b == 2 and X.arg.n == 3 and X.c == nil)
+-- Test is disabled for LuaJIT for now. See comment in f().
+-- assert(X.self == a and X.a == 1   and X.b == 2 and X.arg.n == 3 and X.c == nil)
 assert(XX == 12)
 assert(debug.gethook() == nil)
 
@@ -314,12 +326,20 @@ assert(debug.setupvalue(io.read, 1, 10) == nil)
 
 -- testing count hooks
 local a=0
+-- LuaJIT does not check hooks at traces without defined
+-- -DLUAJIT_ENABLE_CHECKHOOK.
+-- For more information see <src/lj_record.c> or commit
+-- 6bce6b118eeb2bb7f36157de158e5cccf0ea68e5 (Add compile-time
+-- option LUAJIT_ENABLE_CHECKHOOK. Disabled by default.).
+-- See also https://github.com/tarantool/tarantool/issues/5701.
+--[[
 debug.sethook(function (e) a=a+1 end, "", 1)
 a=0; for i=1,1000 do end; assert(1000 < a and a < 1012)
 debug.sethook(function (e) a=a+1 end, "", 4)
 a=0; for i=1,1000 do end; assert(250 < a and a < 255)
 local f,m,c = debug.gethook()
 assert(m == "" and c == 4)
+--]]
 debug.sethook(function (e) a=a+1 end, "", 4000)
 a=0; for i=1,1000 do end; assert(a == 0)
 debug.sethook(print, "", 2^24 - 1)   -- count upperbound
@@ -352,18 +372,24 @@ function g1(x) g(x) end
 
 local function h (x) local f=g1; return f(x) end
 
-h(true)
+-- LuaJIT does not provide information about tail calls,
+-- unlike Lua does. getfenv() behaviour is also different here.
+-- Test is disabled for LuaJIT for now.
+-- See also https://github.com/tarantool/tarantool/issues/5702.
+-- h(true)
 
 local b = {}
-debug.sethook(function (e) table.insert(b, e) end, "cr")
-h(false)
-debug.sethook()
+-- Behavior is different for LuaJIT. See the comment above.
+-- debug.sethook(function (e) table.insert(b, e) end, "cr")
+-- h(false)
+-- debug.sethook()
 local res = {"return",   -- first return (from sethook)
   "call", "call", "call", "call",
   "return", "tail return", "return", "tail return",
   "call",    -- last call (to sethook)
 }
-for _, k in ipairs(res) do assert(k == table.remove(b, 1)) end
+-- Behavior is different for LuaJIT. See the comment above.
+-- for _, k in ipairs(res) do assert(k == table.remove(b, 1)) end
 
 
 lim = 30000
@@ -375,7 +401,8 @@ local function foo (x)
   end
 end
 
-foo(lim)
+-- Behavior is different for LuaJIT. See the comment above.
+-- foo(lim)
 
 
 print"+"
@@ -411,7 +438,11 @@ end
 
 local co = coroutine.create(f)
 coroutine.resume(co, 3)
-checktraceback(co, {"yield", "db.lua", "tail", "tail", "tail"})
+-- LuaJIT does not provide information about tail calls,
+-- unlike Lua does.
+-- See also https://github.com/tarantool/tarantool/issues/5703.
+-- Test is disabled for LuaJIT for now.
+-- checktraceback(co, {"yield", "db.lua", "tail", "tail", "tail"})
 
 
 co = coroutine.create(function (x)
@@ -429,8 +460,12 @@ local _, l = coroutine.resume(co, 10)
 local x = debug.getinfo(co, 1, "lfLS")
 assert(x.currentline == l.currentline and x.activelines[x.currentline])
 assert(type(x.func) == "function")
+-- LuaJIT does not report line with single "end" statement as
+-- an active line in debug.getinfo(), unlike Lua does.
+-- See also https://github.com/tarantool/tarantool/issues/5708.
+-- Test is disabled for LuaJIT for now.
 for i=x.linedefined + 1, x.lastlinedefined do
-  assert(x.activelines[i])
+  -- assert(x.activelines[i])
   x.activelines[i] = nil
 end
 assert(next(x.activelines) == nil)   -- no 'extra' elements
@@ -441,8 +476,10 @@ a,b = debug.getlocal(co, 1, 2)
 assert(a == "a" and b == 1)
 debug.setlocal(co, 1, 2, "hi")
 assert(debug.gethook(co) == foo)
-assert(table.getn(tr) == 2 and
-       tr[1] == l.currentline-1 and tr[2] == l.currentline)
+-- LuaJIT does not support per-coroutine hooks.
+-- Test is disabled for LuaJIT.
+-- assert(table.getn(tr) == 2 and
+--        tr[1] == l.currentline-1 and tr[2] == l.currentline)
 
 a,b,c = pcall(coroutine.resume, co)
 assert(a and b and c == l.currentline+1)
@@ -450,9 +487,11 @@ checktraceback(co, {"yield", "in function <"})
 
 a,b = coroutine.resume(co)
 assert(a and b == "hi")
-assert(table.getn(tr) == 4 and tr[4] == l.currentline+2)
+-- Behavior is different for LuaJIT. See the comment above.
+-- assert(table.getn(tr) == 4 and tr[4] == l.currentline+2)
 assert(debug.gethook(co) == foo)
-assert(debug.gethook() == nil)
+-- Behavior is different for LuaJIT. See the comment above.
+-- assert(debug.gethook() == nil)
 checktraceback(co, {})
 
 

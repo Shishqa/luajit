@@ -223,7 +223,11 @@ assert(string.gsub("a alo b hi", "%w%w+", t) == "a ALO b HI")
 
 
 -- tests for gmatch
-assert(string.gfind == string.gmatch)
+-- In Lua 5.1 function string.gfind was renamed to string.gmatch.
+-- You can use it if Lua 5.1 is built with compile-time option
+-- `-DLUA_COMPAT_GFIND`.
+-- This builtin is removed from LuaJIT. Test is disabled.
+-- assert(string.gfind == string.gmatch)
 local a = 0
 for i in string.gmatch('abcde', '()') do assert(i == a+1); a=i end
 assert(a==6)

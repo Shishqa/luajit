@@ -72,8 +72,12 @@ checkmessage("b=1; local aaa='a'; x=aaa+b", "local 'aaa'")
 checkmessage("aaa={}; x=3/aaa", "global 'aaa'")
 checkmessage("aaa='2'; b=nil;x=aaa*b", "global 'b'")
 checkmessage("aaa={}; x=-aaa", "global 'aaa'")
-assert(not string.find(doit"aaa={}; x=(aaa or aaa)+(aaa and aaa)", "'aaa'"))
-assert(not string.find(doit"aaa={}; (aaa or aaa)()", "'aaa'"))
+-- LuaJIT reports the error as the following here:
+-- "attempt to perform arithmetic on global 'aaa' (a table value)"
+-- Lua 5.1 doesn't report variable name here.
+-- Test is disabled for LuaJIT.
+-- assert(not string.find(doit"aaa={}; x=(aaa or aaa)+(aaa and aaa)", "'aaa'"))
+-- assert(not string.find(doit"aaa={}; (aaa or aaa)()", "'aaa'"))
 
 checkmessage([[aaa=9
 repeat until 3==3
@@ -100,9 +104,12 @@ while 1 do
   insert(prefix, a)
 end]], "global 'insert'")
 
-checkmessage([[  -- tail call
-  return math.sin("a")
-]], "'sin'")
+-- Implementation of fast functions in LuaJIT does not provide
+-- enough info on failure.
+-- Test is disabled for LuaJIT.
+-- checkmessage([[  -- tail call
+--   return math.sin("a")
+-- ]], "'sin'")
 
 checkmessage([[collectgarbage("nooption")]], "invalid option")
 
@@ -193,7 +200,11 @@ checksyntax("[[a]]", "", "[[a]]", 1)
 checksyntax("'aa'", "", "'aa'", 1)
 
 -- test 255 as first char in a chunk
-checksyntax("\255a = 1", "", "\255", 1)
+-- LuaJIT does not avoid to use non-alphabetic symbols
+-- as identifiers, unlike Lua does.
+-- For more details see <src/lj_char.c> and <src/lj_lex.c>.
+-- Test is disabled for LuaJIT.
+-- checksyntax("\255a = 1", "", "\255", 1)
 
 doit('I = loadstring("a=9+"); a=3')
 assert(a==3 and I == nil)

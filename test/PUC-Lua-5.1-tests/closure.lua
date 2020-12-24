@@ -174,7 +174,10 @@ f = coroutine.wrap(foo)
 local a = {}
 assert(f(a) == _G)
 local a,b = pcall(f)
-assert(a and b == _G)
+-- LuaJIT getfenv() behaviour is different in tail calls.
+-- See also https://github.com/tarantool/tarantool/issues/5713.
+-- Test is disabled for LuaJIT for now.
+-- assert(a and b == _G)
 
 
 -- tests for multiple yield/resume arguments
@@ -261,6 +264,12 @@ end
 
 local x = gen(100)
 local a = {}
+-- In Lua 5.1 math.mod() is renamed to math.fmod() if build
+-- Lua 5.1 without flag `-DLUA_COMPAT_MOD`.
+-- LuaJIT also has math.fmod() instead math.mod() builtin.
+-- See also https://github.com/tarantool/tarantool/issues/5711.
+-- Test is disabled.
+--[=[
 while 1 do
   local n = x()
   if n == nil then break end
@@ -269,6 +278,7 @@ while 1 do
 end
 
 assert(table.getn(a) == 25 and a[table.getn(a)] == 97)
+--]=]
 
 
 -- errors in coroutines

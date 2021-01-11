@@ -55,10 +55,10 @@ test:test("gc-allocated-freed", function(subtest)
     collectgarbage("collect")
 
     -- Bump getmetrics table and string keys allocation.
-    local old_metrics = misc.getmetrics()
+    misc.getmetrics()
 
     -- Remember allocated size for getmetrics table.
-    old_metrics = misc.getmetrics()
+    local old_metrics = misc.getmetrics()
 
     collectgarbage("collect")
 
@@ -74,7 +74,7 @@ test:test("gc-allocated-freed", function(subtest)
     -- (such as concatenation, string.format, table.concat)
     -- while creating the string. Otherwise gc_freed/gc_allocated
     -- relations will not be so straightforward.
-    local str = string.sub("Hello, world", 1, 5)
+    string.sub("Hello, world", 1, 5)
     collectgarbage("collect")
 
     new_metrics = misc.getmetrics()
@@ -88,7 +88,7 @@ test:test("gc-allocated-freed", function(subtest)
            "freed old old_metrics")
     old_metrics = new_metrics
 
-    str = string.sub("Hello, world", 8, -1)
+    string.sub("Hello, world", 8, -1)
 
     new_metrics = misc.getmetrics()
 
@@ -193,29 +193,29 @@ test:test("objcount", function(subtest)
     }
 
     -- Separate objects creations to separate jit traces.
-    for i = 1, 1000 do
-        table.insert(placeholder.str, tostring(i))
+    for _ = 1, 1000 do
+        table.insert(placeholder.str, tostring(_))
     end
 
-    for i = 1, 1000 do
-        table.insert(placeholder.tab, {i})
+    for _ = 1, 1000 do
+        table.insert(placeholder.tab, {_})
     end
 
-    for i = 1, 1000 do
+    for _ = 1, 1000 do
         table.insert(placeholder.udata, newproxy())
     end
 
-    for i = 1, 1000 do
+    for _ = 1, 1000 do
         -- Check counting of VLA/VLS/aligned cdata.
         table.insert(placeholder.cdata, ffi.new("char[?]", 4))
     end
 
-    for i = 1, 1000 do
+    for _ = 1, 1000 do
         -- Check counting of non-VLA/VLS/aligned cdata.
-        table.insert(placeholder.cdata, ffi.new("uint64_t", i))
+        table.insert(placeholder.cdata, ffi.new("uint64_t", _))
     end
 
-    placeholder = nil
+    placeholder = nil -- luacheck: no unused
     collectgarbage("collect")
     local new_metrics = misc.getmetrics()
 
@@ -369,7 +369,7 @@ test:test("strhash", function(subtest)
     assert(new_metrics.strhash_miss - old_metrics.strhash_miss == 0)
     old_metrics = new_metrics
 
-    local str1  = "strhash".."_hit"
+    "strhash".."_hit"
 
     new_metrics = misc.getmetrics()
     assert(new_metrics.strhash_hit - old_metrics.strhash_hit == 20)
@@ -381,7 +381,7 @@ test:test("strhash", function(subtest)
     assert(new_metrics.strhash_miss - old_metrics.strhash_miss == 0)
     old_metrics = new_metrics
 
-    local str2 = "new".."string"
+    "new".."string"
 
     new_metrics = misc.getmetrics()
     assert(new_metrics.strhash_hit - old_metrics.strhash_hit == 19)

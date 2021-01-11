@@ -60,6 +60,12 @@ add_subdirectory(gh-4427-ffi-sandwich)
 add_subdirectory(lj-flush-on-trace)
 add_subdirectory(misclib-getmetrics-capi)
 
+# The part of memory profiler toolchain is located in tools directory, so
+# LUA_PATH need to be updated.
+set(LUA_PATH
+  "${CMAKE_CURRENT_SOURCE_DIR}/?.lua\;${PROJECT_SOURCE_DIR}/tools/?.lua"
+)
+
 # LUA_CPATH and LD_LIBRARY_PATH variables and also TESTLIBS list
 # with dependecies are set in scope of BuildTestLib macro.
 add_custom_command(
@@ -68,7 +74,7 @@ add_custom_command(
   DEPENDS ${LUAJIT_TEST_BINARY} ${TESTLIBS}
   COMMAND
   env
-    LUA_PATH="${CMAKE_CURRENT_SOURCE_DIR}/?.lua\;\;"
+    LUA_PATH="${LUA_PATH}\;\;"
     LUA_CPATH="${LUA_CPATH}\;\;"
     LD_LIBRARY_PATH="${LD_LIBRARY_PATH}"
     ${PROVE} ${CMAKE_CURRENT_SOURCE_DIR}

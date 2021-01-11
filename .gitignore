@@ -17,6 +17,7 @@ Makefile
 cmake_install.cmake
 compile_commands.json
 install_manifest.txt
+luacheck.ok
 luajit-parse-memprof
 luajit.pc
 tests.ok

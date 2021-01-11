@@ -169,6 +169,12 @@ if(LUAJIT_ENABLE_GC64)
   AppendFlags(TARGET_C_FLAGS -DLUAJIT_ENABLE_GC64)
 endif()
 
+# Disable memory profiler.
+option(LUAJIT_DISABLE_MEMPROF "LuaJIT memory profiler support" OFF)
+if(LUAJIT_DISABLE_MEMPROF)
+  AppendFlags(TARGET_C_FLAGS -DLUAJIT_DISABLE_MEMPROF)
+endif()
+
 # Switch to harder (and slower) hash function when a collision
 # chain in the string hash table exceeds certain length.
 option(LUAJIT_SMART_STRINGS "Harder string hashing function" ON)

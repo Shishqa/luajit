@@ -54,8 +54,15 @@ make_source_list(SOURCES_UTILS
   SOURCES
     lj_alloc.c
     lj_char.c
-    lj_profile.c
+    lj_utils_leb128.c
     lj_vmmath.c
+    lj_wbuf.c
+)
+
+make_source_list(SOURCES_PROFILER
+  SOURCES
+    lj_memprof.c
+    lj_profile.c
 )
 
 # Lua standard library + extensions by LuaJIT.
@@ -126,6 +133,7 @@ make_source_list(SOURCES_CORE_NO_JIT_FFI
     ${SOURCES_RUNTIME}
     ${SOURCES_LUA_LIB}
     ${SOURCES_FRONTEND}
+    ${SOURCES_PROFILER}
     ${SOURCES_UTILS}
 )
 

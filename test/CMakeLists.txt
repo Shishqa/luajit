@@ -34,9 +34,11 @@ endif()
 add_custom_target(${PROJECT_NAME}-luacheck DEPENDS luacheck.ok)
 
 add_subdirectory(tarantool-tests)
+add_subdirectory(lua-Harness)
 
 add_custom_target(${PROJECT_NAME}-test DEPENDS
   tarantool-tests
+  lua-Harness
 )
 
 if(LUAJIT_USE_TEST)

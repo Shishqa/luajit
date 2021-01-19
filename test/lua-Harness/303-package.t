@@ -30,7 +30,7 @@ L<https://www.lua.org/manual/5.4/manual.html#6.3>
 
 --]]
 
-require'tap'
+require'tap_local'
 local profile = require'profile'
 local luajit21 = jit and (jit.version_num >= 20100 or jit.version:match'^RaptorJIT')
 local has_loaders = _VERSION == 'Lua 5.1'
@@ -130,9 +130,9 @@ end
 
 -- searchpath
 if has_searcherpath then
-    local p = package.searchpath('tap', package.path)
+    local p = package.searchpath('tap_local', package.path)
     type_ok(p, 'string', "searchpath")
-    p = package.searchpath('tap', 'bad path')
+    p = package.searchpath('tap_local', 'bad path')
     is(p, nil)
 else
     is(package.searchpath, nil, "no package.searchpath")
@@ -265,12 +265,12 @@ if has_module then
     package.seeall(m)
     m.pass("function package.seeall")
 
-    is(mod, nil, "function module & seeall")
+    is(variable_exists('mod'), nil, "function module & seeall")
     module('mod', package.seeall)
     type_ok(mod, 'table')
     is(mod, package.loaded.mod)
 
-    is(modz, nil, "function module")
+    is(variable_exists('modz'), nil, "function module")
     local _G = _G
     module('modz')
     _G.type_ok(_G.modz, 'table')

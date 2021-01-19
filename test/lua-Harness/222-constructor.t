@@ -30,7 +30,7 @@ See section "Table Constructors" in "Programming in Lua".
 
 --]]
 
-require'tap'
+require'tap_local'
 
 plan(16)
 

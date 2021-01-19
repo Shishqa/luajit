@@ -24,10 +24,10 @@ See L<http://luajit.org/running.html>
 
 --]]
 
-require'tap'
+require'tap_local'
 local profile = require'profile'
 
-if not jit or ujit then
+if not jit or variable_exists('ujit') then
     skip_all("only with LuaJIT")
 end
 

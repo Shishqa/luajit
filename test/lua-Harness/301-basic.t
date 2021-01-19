@@ -30,7 +30,7 @@ L<https://www.lua.org/manual/5.4/manual.html#6.1>
 
 --]]
 
-require'tap'
+require'tap_local'
 local profile = require'profile'
 local has_error53 = _VERSION >= 'Lua 5.3'
 local has_gcinfo = _VERSION == 'Lua 5.1'
@@ -300,7 +300,7 @@ end
         diag(msg)
     end
     type_ok(f, 'function', "function load(reader)")
-    is(bar, nil)
+    is(variable_exists('bar'), nil)
     f()
     is(bar('ok'), 'ok')
     bar = nil
@@ -324,7 +324,7 @@ end
     if _VERSION == 'Lua 5.1' and not jit then
         todo("not with 5.1")
     end
-    is(baz, nil)
+    is(variable_exists('baz'), nil)
 
     t = { [[?syntax error?]] }
     i = 0
@@ -388,7 +388,7 @@ end
 ]]
     f:close()
     f = loadfile('foo-301.lua')
-    is(foo, nil, "function loadfile")
+    is(variable_exists('foo'), nil, "function loadfile")
     f()
     is(foo('ok'), 'ok')
 
@@ -559,7 +559,7 @@ if has_rawlen then
                "^[^:]+:%d+: bad argument #1 to 'rawlen' %(table ",
                "function rawlen (bad arg)")
 else
-    is(rawlen, nil, "no rawlen")
+    is(variable_exists('rawlen'), nil, "no rawlen")
 end
 
 do -- rawget
@@ -686,7 +686,7 @@ do -- type
     is(type(true), 'boolean')
     is(type(nil), 'nil')
     is(type(io.stdin), 'userdata')
-    is(type(type(X)), 'string')
+    is(type(type(variable_exists('X'))), 'string')
 
     local a = nil
     is(type(a), 'nil', "function type")
@@ -791,7 +791,7 @@ if has_warn then
                "^[^:]+:%d+: bad argument #1 to 'warn' %(string expected, got no value%)",
                "function warn (no arg)")
 else
-    is(warn, nil, "no warn")
+    is(variable_exists('warn'), nil, "no warn")
 end
 
 do -- xpcall

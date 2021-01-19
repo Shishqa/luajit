@@ -24,7 +24,7 @@ See L<http://luajit.org/ext_jit.html>.
 
 --]]
 
-require 'tap'
+require'tap_local'
 local profile = require'profile'
 
 if not jit then
@@ -35,7 +35,7 @@ local compiled_with_jit = jit.status()
 local luajit20 = jit.version_num < 20100 and not jit.version:match'RaptorJIT'
 local has_jit_opt = compiled_with_jit
 local has_jit_security = jit.security
-local has_jit_util = not ujit and not jit.version:match'RaptorJIT'
+local has_jit_util = not variable_exists('ujit') and not jit.version:match'RaptorJIT'
 
 plan'no_plan'
 

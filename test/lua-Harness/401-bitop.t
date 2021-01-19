@@ -24,7 +24,7 @@ See L<http://bitop.luajit.org/>.
 
 --]]
 
-require 'tap'
+require'tap_local'
 
 if not jit then
     skip_all("only with LuaJIT")

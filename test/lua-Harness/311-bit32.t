@@ -29,11 +29,11 @@ L<https://www.lua.org/manual/5.2/manual.html#6.7>
 
 --]]
 
-require 'tap'
+require'tap_local'
 local profile = require'profile'
 local has_bit32 = _VERSION == 'Lua 5.2' or profile.compat52 or profile.has_bit32
 
-if not bit32 then
+if not variable_exists('bit32') then
     plan(1)
     nok(has_bit32, "no has_bit32")
     os.exit(0)

@@ -22,7 +22,7 @@
 
 ]]
 
-require'tap'
+require'tap_local'
 
 plan(3)
 ok( true, 'ok' )

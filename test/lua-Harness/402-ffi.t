@@ -24,7 +24,7 @@ See L<http://luajit.org/ext_ffi.html>.
 
 --]]
 
-require 'tap'
+require'tap_local'
 
 if not jit then
     skip_all("only with LuaJIT")
@@ -39,7 +39,7 @@ end
 
 plan(33)
 
-is(_G.ffi, nil, "ffi not loaded by default")
+is(variable_exists('ffi'), nil, "ffi not loaded by default")
 ffi = require'ffi'
 is(package.loaded.ffi, ffi, "package.loaded")
 is(require'ffi', ffi, "require")

@@ -28,8 +28,8 @@ L<https://www.lua.org/manual/5.4/manual.html#7>
 
 --]]
 
-require'tap'
-local has_bytecode = not ujit and not ravi
+require'tap_local'
+local has_bytecode = not variable_exists('ujit') and not variable_exists('ravi')
 local has_error52 = _VERSION >= 'Lua 5.2'
 local has_error53 = _VERSION >= 'Lua 5.3'
 local has_opt_E = _VERSION >= 'Lua 5.2' or jit
@@ -37,7 +37,7 @@ local has_opt_W = _VERSION >= 'Lua 5.4'
 local banner = '^[%w%s%-%.]-Copyright %(C%) %d%d%d%d'
 if jit and jit.version:match'^RaptorJIT' then
     banner = '^[%w%s%.]- %-%- '
-elseif ravi then
+elseif variable_exists('ravi') then
     banner = '^Ravi %d%.%d%.%d'
 end
 
@@ -108,10 +108,10 @@ f:close()
 cmd = lua .. " -i hello-241.lua < hello-241.lua 2>&1"
 f = io.popen(cmd)
 like(f:read'*l', banner, "-i")
-if ujit then
+if variable_exists('ujit') then
     like(f:read'*l', '^JIT:')
 end
-if ravi then
+if variable_exists('ravi') then
     like(f:read'*l', '^Copyright %(C%)')
     like(f:read'*l', '^Portions Copyright %(C%)')
     like(f:read'*l', '^Options')
@@ -190,7 +190,7 @@ f:close()
 cmd = lua .. [[ -v hello-241.lua 2>&1]]
 f = io.popen(cmd)
 like(f:read'*l', banner, "-v & script")
-if ravi then
+if variable_exists('ravi') then
     like(f:read'*l', '^Copyright %(C%)')
     like(f:read'*l', '^Portions Copyright %(C%)')
     like(f:read'*l', '^Options')
@@ -228,14 +228,14 @@ end
 like(f:read'*l', "^usage: ", "no file")
 f:close()
 
-cmd = lua .. [[ -ltap -e "print(type(ok))"]]
+cmd = lua .. [[ -ltap_local -e "print(type(ok))"]]
 f = io.popen(cmd)
-is(f:read'*l', 'function', "-ltap")
+is(f:read'*l', 'function', "-ltap_local")
 f:close()
 
-cmd = lua .. [[ -l tap -e "print(type(ok))"]]
+cmd = lua .. [[ -l tap_local -e "print(type(ok))"]]
 f = io.popen(cmd)
-is(f:read'*l', 'function', "-l tap")
+is(f:read'*l', 'function', "-l tap_local")
 f:close()
 
 cmd = lua .. [[ -l lpeg -e "print(1)" 2>&1]]

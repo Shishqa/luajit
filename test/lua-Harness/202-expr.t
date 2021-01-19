@@ -28,7 +28,7 @@ L<https://www.lua.org/manual/5.4/manual.html#3.4>
 
 --]]
 
-require'tap'
+require'tap_local'
 local profile = require'profile'
 local nocvtn2s = profile.nocvtn2s
 local nocvts2n = profile.nocvts2n
@@ -101,7 +101,7 @@ if not nocvtn2s then
 end
 
 error_like(function () return 'hello' + 1 end,
-           ((not nocvts2n and _VERSION >= 'Lua 5.4') or ravi) and "attempt to add" or "perform arithmetic",
+           ((not nocvts2n and _VERSION >= 'Lua 5.4') or variable_exists('ravi')) and "attempt to add" or "perform arithmetic",
            "no coercion")
 
 error_like(function ()

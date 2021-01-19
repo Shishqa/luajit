@@ -24,7 +24,7 @@ Tests Lua Basic & IO Libraries with stdin
 
 --]]
 
-require'tap'
+require'tap_local'
 
 local lua = arg[-3] or arg[-1]
 
@@ -32,7 +32,7 @@ if not pcall(io.popen, lua .. [[ -e "a=1"]]) then
     skip_all "io.popen not supported"
 end
 
-plan(12)
+plan(11)
 
 do
     local f = io.open('lib-320.lua', 'w')
@@ -64,10 +64,9 @@ end
 ]]
     f:close()
 
-    local cmd = lua .. [[ -e "f = loadfile(); print(foo); f(); print(foo('ok'))" < foo-320.lua]]
+    local cmd = lua .. [[ -e "f = loadfile(); f(); print(foo('ok'))" < foo-320.lua]]
     f = io.popen(cmd)
-    is(f:read'*l', 'nil', "function loadfile (stdin)")
-    is(f:read'*l', 'ok')
+    is(f:read'*l', 'ok', "function loadfile (stdin)")
     f:close()
 
     os.remove('foo-320.lua') -- clean up

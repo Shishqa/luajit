@@ -39,7 +39,7 @@ function done_testing ()
 end
 
 function skip_all (reason)
-    out = "1..0"
+    local out = "1..0"
     if reason then
         out = out .. " # SKIP " .. reason
     end
@@ -194,6 +194,15 @@ function todo (reason, count)
     count = count or 1
     todo_upto = curr_test + count
     todo_reason = reason
+end
+
+function variable_exists (name)
+    for k,_ in pairs(_G) do
+        if (k == name) then
+            return _G[name]
+        end
+    end
+    return nil
 end
 
 --

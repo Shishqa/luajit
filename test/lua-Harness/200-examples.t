@@ -24,7 +24,7 @@ First tests in order to check infrastructure.
 
 --]]
 
-require'tap'
+require'tap_local'
 
 plan(5)
 

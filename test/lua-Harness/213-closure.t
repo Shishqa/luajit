@@ -24,7 +24,7 @@ See section "Closures" in "Programming in Lua".
 
 --]]
 
-require'tap'
+require'tap_local'
 
 plan(15)
 

@@ -28,13 +28,13 @@ L<https://www.lua.org/manual/5.4/manual.html#3.3.3>
 
 --]]
 
-require'tap'
+require'tap_local'
 local has_env = _VERSION >= 'Lua 5.2'
 
 plan'no_plan'
 
 do
-    is(b, nil, "global variable")
+    is(variable_exists('b'), nil, "global variable")
     b = 10
     is(b, 10)
     if has_env then
@@ -43,7 +43,7 @@ do
         error_like([[ _ENV = nil; b = 20 ]],
                    "attempt to ")
     else
-        is(_ENV, nil, "no _ENV");
+        is(variable_exists('_ENV'), nil, "no _ENV");
     end
     b = nil
     is(b, nil)

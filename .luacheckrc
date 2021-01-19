@@ -10,4 +10,5 @@ exclude_files = {
   'src/',
   'test/PUC-Lua-5.1-tests/',
   'test/LuaJIT-tests/',
+  'test/lua-Harness-tests/',
 }

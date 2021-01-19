@@ -25,7 +25,7 @@ section "Coroutines as Iterators" in "Programming in Lua".
 
 --]]
 
-require'tap'
+require'tap_harness'
 
 plan(8)
 

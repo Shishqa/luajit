@@ -28,7 +28,7 @@ L<https://www.lua.org/manual/5.4/manual.html#7>
 
 --]]
 
-require'tap'
+require'tap_harness'
 local has_bytecode = not ujit and not ravi
 local has_error52 = _VERSION >= 'Lua 5.2'
 local has_error53 = _VERSION >= 'Lua 5.3'
@@ -228,14 +228,14 @@ end
 like(f:read'*l', "^usage: ", "no file")
 f:close()
 
-cmd = lua .. [[ -ltap -e "print(type(ok))"]]
+cmd = lua .. [[ -ltap_harness -e "print(type(ok))"]]
 f = io.popen(cmd)
-is(f:read'*l', 'function', "-ltap")
+is(f:read'*l', 'function', "-ltap_harness")
 f:close()
 
-cmd = lua .. [[ -l tap -e "print(type(ok))"]]
+cmd = lua .. [[ -l tap_harness -e "print(type(ok))"]]
 f = io.popen(cmd)
-is(f:read'*l', 'function', "-l tap")
+is(f:read'*l', 'function', "-l tap_harness")
 f:close()
 
 cmd = lua .. [[ -l lpeg -e "print(1)" 2>&1]]

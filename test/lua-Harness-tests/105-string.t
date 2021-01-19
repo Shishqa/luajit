@@ -22,7 +22,7 @@
 
 --]]
 
-require'tap'
+require'tap_harness'
 local profile = require'profile'
 local has_op53 = _VERSION >= 'Lua 5.3'
 

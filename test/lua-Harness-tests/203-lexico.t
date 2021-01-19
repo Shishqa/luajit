@@ -31,7 +31,7 @@ L<https://www.lua.org/manual/5.4/manual.html#3.1>
 
 --]]
 
-require'tap'
+require'tap_harness'
 local loadstring = loadstring or load
 local luajit21 = jit and (jit.version_num >= 20100 or jit.version:match'^RaptorJIT')
 
@@ -117,20 +117,24 @@ do
     like(msg, "^[^:]+:%d+: unfinished long comment .-near")
 end
 
+-- Adapt tests for testing with Tarantool's out of source build
+-- on read only file system. CUR_SOURCE_DIR is set via CMake.
+local path_to_sources = os.getenv('CUR_SOURCE_DIR') .. '/'
+
 if _VERSION >= 'Lua 5.2' or jit then
-    dofile'lexico52/lexico.t'
+    dofile(path_to_sources .. 'lexico52/lexico.t')
 end
 
 if _VERSION >= 'Lua 5.3' or luajit21 then
-    dofile'lexico53/lexico.t'
+    dofile(path_to_sources .. 'lexico53/lexico.t')
 end
 
 if _VERSION >= 'Lua 5.4' then
-    dofile'lexico54/lexico.t'
+    dofile(path_to_sources .. 'lexico54/lexico.t')
 end
 
 if jit and pcall(require, 'ffi') then
-    dofile'lexicojit/lexico.t'
+    dofile(path_to_sources .. 'lexicojit/lexico.t')
 end
 
 done_testing()

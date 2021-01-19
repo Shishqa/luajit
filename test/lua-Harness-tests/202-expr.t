@@ -28,7 +28,7 @@ L<https://www.lua.org/manual/5.4/manual.html#3.4>
 
 --]]
 
-require'tap'
+require'tap_harness'
 local profile = require'profile'
 local nocvtn2s = profile.nocvtn2s
 local nocvts2n = profile.nocvts2n

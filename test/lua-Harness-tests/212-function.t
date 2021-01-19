@@ -30,7 +30,7 @@ See section "Functions" in "Programming in Lua".
 
 --]]
 
-require'tap'
+require'tap_harness'
 local loadstring = loadstring or load
 
 plan(68)

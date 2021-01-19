@@ -30,7 +30,7 @@ L<https://www.lua.org/manual/5.4/manual.html#6.1>
 
 --]]
 
-require'tap'
+require'tap_harness'
 local profile = require'profile'
 local has_error53 = _VERSION >= 'Lua 5.3'
 local has_gcinfo = _VERSION == 'Lua 5.1'
@@ -843,7 +843,10 @@ do -- xpcall
 end
 
 if jit and pcall(require, 'ffi') then
-    dofile'lexicojit/basic.t'
+    -- Adapt test for testing with Tarantool's out of source build
+    -- on read only file system. CUR_SOURCE_DIR is set via CMake.
+    local path_to_sources = os.getenv('CUR_SOURCE_DIR')
+    dofile(path_to_sources .. '/lexicojit/basic.t')
 end
 
 done_testing()

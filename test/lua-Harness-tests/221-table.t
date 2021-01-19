@@ -24,7 +24,7 @@ See section "Tables" in "Programming in Lua".
 
 --]]
 
-require'tap'
+require'tap_harness'
 
 plan(25)
 

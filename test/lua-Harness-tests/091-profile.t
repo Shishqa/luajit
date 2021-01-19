@@ -22,7 +22,7 @@
 
 ]]
 
-require'tap'
+require'tap_harness'
 
 plan'no_plan'
 

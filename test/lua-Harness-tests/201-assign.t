@@ -28,7 +28,7 @@ L<https://www.lua.org/manual/5.4/manual.html#3.3.3>
 
 --]]
 
-require'tap'
+require'tap_harness'
 local has_env = _VERSION >= 'Lua 5.2'
 
 plan'no_plan'

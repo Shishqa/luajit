@@ -24,7 +24,7 @@ See section "Object-Oriented Programming" in "Programming in Lua".
 
 --]]
 
-require'tap'
+require'tap_harness'
 
 plan(18)
 

@@ -45,4 +45,3 @@
 402-ffi.t
 403-jit.t
 404-ext.t
-411-luajit.t

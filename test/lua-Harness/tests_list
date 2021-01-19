@@ -29,7 +29,6 @@
 223-iterator.t
 231-metatable.t
 232-object.t
-241-standalone.t
 242-luac.t
 301-basic.t
 303-package.t

@@ -18,7 +18,7 @@ add_custom_command(
   env
     LUA_PATH="./?.lua\;${LUAJIT_SOURCE_DIR}/?.lua\;\;"
     LUA_CPATH="./?${CMAKE_SHARED_LIBRARY_SUFFIX}\;${LUAJIT_SOURCE_DIR}/?${CMAKE_SHARED_LIBRARY_SUFFIX}\;\;"
-    ${PROVE} ${CMAKE_CURRENT_SOURCE_DIR}
+    ${PROVE} - < tests_list
       --exec "${LUAJIT_TEST_BINARY} -l profile_luajit21"
       --failures --shuffle
     && touch tests.ok

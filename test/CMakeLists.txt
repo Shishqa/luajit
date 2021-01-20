@@ -34,9 +34,11 @@ endif()
 add_custom_target(${PROJECT_NAME}-luacheck DEPENDS luacheck.ok)
 
 add_subdirectory(tarantool-tests)
+add_subdirectory(LuaJIT-test-cleanup)
 
 add_custom_target(${PROJECT_NAME}-test DEPENDS
   tarantool-tests
+  LuaJIT-test-cleanup
 )
 
 if(LUAJIT_USE_TEST)

@@ -401,6 +401,15 @@ local function execute_plan(plan, opts)
   end
 end
 
+function variable_exists (name)
+    for k,_ in pairs(_G) do
+        if (k == name) then
+            return _G[name]
+        end
+    end
+    return nil
+end
+
 local opts = parse_args{...}
 if not opts then
   return

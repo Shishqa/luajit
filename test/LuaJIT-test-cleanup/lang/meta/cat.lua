@@ -46,7 +46,7 @@ end
 
 do --- jit mixed types
   local a, b = create(function(a, b)
-    if a ~= b then local x = gg end
+    if a ~= b then local x = variable_exists('gg') end
     return (type(a) == "string" and a or a[1])..
 	   (type(b) == "string" and b or b[1])
   end, "a", "b")

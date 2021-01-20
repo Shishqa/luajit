@@ -46,7 +46,7 @@ do --- resize
   setmetatable(parent, grandparent)
 
   local child = setmetatable({}, parent)
-  child.foo = _
+  child.foo = variable_exists('_')
 end
 
 do --- str

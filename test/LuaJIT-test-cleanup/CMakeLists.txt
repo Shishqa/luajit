@@ -6,7 +6,7 @@ add_custom_command(
   OUTPUT tests.ok
   DEPENDS ${LUAJIT_TEST_BINARY}
   COMMAND
-    ${LUAJIT_TEST_BINARY} ${CMAKE_CURRENT_SOURCE_DIR}/test.lua
+    ${LUAJIT_TEST_BINARY} ${CMAKE_CURRENT_SOURCE_DIR}/test.lua `cat tests_list`
     && touch tests.ok
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )

@@ -9,4 +9,5 @@ exclude_files = {
   'dynasm/',
   'src/',
   'test/PUC-Lua-5.1-tests/',
+  'test/LuaJIT-tests/',
 }

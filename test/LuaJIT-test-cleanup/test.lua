@@ -401,13 +401,8 @@ local function execute_plan(plan, opts)
   end
 end
 
-function variable_exists (name)
-    for k,_ in pairs(_G) do
-        if (k == name) then
-            return _G[name]
-        end
-    end
-    return nil
+if package.loaded.strict ~= nil then
+  package.loaded.strict.off()
 end
 
 local opts = parse_args{...}

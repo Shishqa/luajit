@@ -43,11 +43,11 @@ do --- 5.2 base +lua>=5.2
 end
 
 do --- pre-5.2 base rawlen -compat5.2
-  assert(not variable_exists('rawlen'))
+  assert(not rawlen)
 end
 
 do --- 5.2 base rawlen +compat5.2
-  assert(variable_exists('rawlen'))
+  assert(rawlen)
 end
 
 do --- math

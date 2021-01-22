@@ -6,6 +6,8 @@ add_custom_command(
   OUTPUT tests.ok
   DEPENDS ${LUAJIT_TEST_BINARY}
   COMMAND
+  env
+    LUA_INIT='if package.loaded.strict ~= nil then package.loaded.strict.off() end'
     ${LUAJIT_TEST_BINARY} ${CMAKE_CURRENT_SOURCE_DIR}/test.lua `cat tests_list`
     && touch tests.ok
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}

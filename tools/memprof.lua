@@ -37,6 +37,11 @@ Supported options are:
   os.exit(0)
 end
 
+local leak_only = false
+opt_map["leak-only"] = function()
+  leak_only = true
+end
+
 -- Print error and exit with error status.
 local function opterror(...)
   stderr:write("luajit-parse-memprof.lua: ERROR: ", ...)
@@ -94,19 +99,11 @@ local function dump(inputfile)
   local reader = bufread.new(inputfile)
   local symbols = symtab.parse(reader)
   local events = memprof.parse(reader, symbols)
-
-  stdout:write("ALLOCATIONS", "\n")
-  view.render(events.alloc, symbols)
-  stdout:write("\n")
-
-  stdout:write("REALLOCATIONS", "\n")
-  view.render(events.realloc, symbols)
-  stdout:write("\n")
-
-  stdout:write("DEALLOCATIONS", "\n")
-  view.render(events.free, symbols)
-  stdout:write("\n")
-
+  if leak_only then
+    view.leak_only(events, symbols)
+  else
+    view.all(events, symbols)
+  end
   os.exit(0)
 end
 

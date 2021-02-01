@@ -128,9 +128,12 @@ do
     local a = {}
   until gcinfo() > 1000
   collectgarbage"restart"
-  repeat
-    local a = {}
-  until gcinfo() < 1000
+  -- Tarantool has too much objects at start.
+  -- gcinfo() is always greater than 1000.
+  -- Test is disabled for Tarantool binary.
+  -- repeat
+  --   local a = {}
+  -- until gcinfo() < 1000
 end
 
 lim = 15

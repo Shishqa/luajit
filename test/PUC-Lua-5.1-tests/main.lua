@@ -11,7 +11,7 @@ out = os.tmpname()
 do
   local i = 0
   while arg[i] do i=i-1 end
-  progname = '"'..arg[i+1]..'"'
+  progname = arg[i+1]
 end
 print(progname)
 
@@ -50,8 +50,10 @@ end
 -- test 2 files
 prepfile("print(1); a=2")
 prepfile("print(a)", otherprog)
-RUN("lua -l %s -l%s -lstring -l io %s > %s", prog, otherprog, otherprog, out)
-checkout("1\n2\n2\n")
+-- Test is disabled for Tarantool binary.
+-- See https://github.com/tarantool/tarantool/issues/5747.
+-- RUN("lua -l %s -l%s -lstring -l io %s > %s", prog, otherprog, otherprog, out)
+-- checkout("1\n2\n2\n")
 
 local a = [[
   assert(table.getn(arg) == 3 and arg[1] == 'a' and
@@ -63,7 +65,10 @@ local a = [[
 ]]
 a = string.format(a, progname)
 prepfile(a)
-RUN('lua "-e " -- %s a b c', prog)
+-- Tarantool has different command line argument parsing.
+-- For example it always set itself as arg[-1].
+-- Test is disabled for Tarantool binary.
+-- RUN('lua "-e " -- %s a b c', prog)
 
 -- test 'arg' availability in libraries
 -- LuaJIT v2.1.0-beta3 has extension from Lua 5.3:
@@ -85,8 +90,10 @@ prepfile[[print(({...})[30])]]
 RUN("lua %s %s > %s", prog, string.rep(" a", 30), out)
 checkout("a\n")
 
-RUN([[lua "-eprint(1)" -ea=3 -e "print(a)" > %s]], out)
-checkout("1\n3\n")
+-- Test is disabled for Tarantool binary.
+-- See https://github.com/tarantool/tarantool/issues/5747.
+-- RUN([[lua "-eprint(1)" -ea=3 -e "print(a)" > %s]], out)
+-- checkout("1\n3\n")
 
 prepfile[[
   print(
@@ -177,7 +184,10 @@ assert(not os.remove(out))
 
 RUN("lua -v")
 
-NoRun("lua -h")
+-- Tarantool returns zero status at exit with -h option, unlike
+-- Lua does.
+-- Test is disabled for Tarantool binary.
+-- NoRun("lua -h")
 NoRun("lua -e")
 NoRun("lua -e a")
 NoRun("lua -f")

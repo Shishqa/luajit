@@ -93,7 +93,9 @@ for s in string.gmatch(prog, "$([^$]+)") do
   if not n then io.write(s) else F[n]() end
 end
 io.close()
-result = dofile(file)
+-- Adapt test for testing with Tarantool's out-of-source build
+-- on read only file system.
+result = dofile(file, "")
 assert(os.remove(file))
 print'OK'
 return result

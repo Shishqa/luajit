@@ -58,9 +58,13 @@ end
 --
 -- redefine dofile to run files through dump/undump
 --
-dofile = function (n)
+-- Adapt test for testing with Tarantool's out-of-source build
+-- on read only file system. CUR_SOURCE_DIR is set via CMake.
+local path_to_sources = os.getenv('CUR_SOURCE_DIR')..'/'
+dofile = function (n, prefix)
+  local pr = prefix or path_to_sources
   showmem()
-  local f = assert(loadfile(n))
+  local f = assert(loadfile(pr..n))
   local b = string.dump(f)
   f = assert(loadstring(b))
   return f()
@@ -77,7 +81,9 @@ do
   end
 end
 
-local f = assert(loadfile('gc.lua'))
+-- Adapt test for testing with Tarantool's out-of-source build
+-- on read only file system.
+local f = assert(loadfile(path_to_sources..'gc.lua'))
 f()
 dofile('db.lua')
 assert(dofile('calls.lua') == deep and deep)
@@ -88,7 +94,9 @@ assert(dofile('locals.lua') == 5)
 dofile('constructs.lua')
 dofile('code.lua')
 do
-  local f = coroutine.wrap(assert(loadfile('big.lua')))
+  -- Adapt test for testing with Tarantool's out-of-source build
+  -- on read only file system.
+  local f = coroutine.wrap(assert(loadfile(path_to_sources..'big.lua')))
   assert(f() == 'b')
   assert(f() == 'a')
 end

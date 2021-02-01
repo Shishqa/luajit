@@ -83,7 +83,10 @@ add_custom_command(TARGET PUC-Lua-5.1-tests
     # LUA_INIT="package.path='?\;'..package.path"
     # So use less preferable way for tests.
     LUA_PATH="${LUA_PATH}\;\;"
-    ${LUAJIT_TEST_BINARY} ${TEST_RUNNER}
+    # XXX: Adapt to run test on readonly file systems
+    # with loadfile(CUR_SOURCE_DIR..filename).
+    CUR_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+    ${LUAJIT_TEST_COMMAND} ${TEST_RUNNER}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 

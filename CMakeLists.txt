@@ -288,6 +288,14 @@ set(LUAJIT_TEST_BINARY ${LUAJIT_BINARY} CACHE STRING
   "Lua implementation to be used for tests. Default is 'luajit'."
 )
 
+# Unfortunately we can't just use LUA_INIT enviroment variable.
+# See https://github.com/tarantool/tarantool/issues/5744 for
+# the details. This variable includes -e 'require"strict".off()'
+# for the Tarantool.
+set(LUAJIT_TEST_COMMAND ${LUAJIT_BINARY} CACHE STRING
+  "Lua implementation with -e command to be used for tests. Default is 'luajit'."
+)
+
 add_subdirectory(test)
 
 # --- Misc rules ---------------------------------------------------------------

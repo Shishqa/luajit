@@ -170,7 +170,11 @@ do -- getenv
     is(os.getenv('__IMPROBABLE__'), nil, "function getenv")
 
     local user = os.getenv('LOGNAME') or os.getenv('USERNAME')
-    type_ok(user, 'string', "function getenv")
+    if not user then
+        skip("no LOGNAME and USERNAME")
+    else
+        type_ok(user, 'string', "function getenv")
+    end
 end
 
 do -- remove

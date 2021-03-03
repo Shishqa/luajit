@@ -222,7 +222,7 @@ end
 local function testrep (init, rep)
   local s = "local a; "..init .. string.rep(rep, 400)
   local a,b = loadstring(s)
-  assert(not a and string.find(b, "syntax levels"))
+  assert(not a and string.find(b, "syntax levels"), print("WIP: DBG: syntax limits error in: ", s, "\n\n===\n\n", a, b))
 end
 testrep("a=", "{")
 testrep("a=", "(")

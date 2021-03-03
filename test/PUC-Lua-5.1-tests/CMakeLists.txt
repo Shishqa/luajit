@@ -23,11 +23,7 @@ macro(build_lib lib sources)
       LINK_FLAGS "-undefined dynamic_lookup"
     )
   endif()
-  if(BUILDMODE STREQUAL "static")
-    target_link_libraries(${lib} PRIVATE libluajit_static)
-  else()
-    target_link_libraries(${lib} PRIVATE libluajit_shared)
-  endif()
+  target_link_libraries(${lib} PRIVATE libluajit_shared)
   list(APPEND TESTLIBS ${lib})
 endmacro()
 

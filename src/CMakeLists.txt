@@ -69,6 +69,10 @@ make_source_list(SOURCES_PROFILER
   SOURCES
     lj_memprof.c
     lj_profile.c
+    profile/write.c
+    profile/buffer.c
+    profile/profile.c
+    profile/callchain.c
 )
 
 # Lua standard library + extensions by LuaJIT.

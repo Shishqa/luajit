@@ -1,0 +1,27 @@
+#ifndef PROFILE
+#define PROFILE
+
+#include "buffer.h"
+#include "../lj_obj.h"
+
+typedef enum { N = 0, I = 1, C = 2, G = 3, J = 4, STATE_MAX = 5 } vmstate;
+
+enum CONSTANTS { DEFAULT_BUF_SIZE = 4096 };
+
+struct profiler_data {
+  uint64_t vmstate[STATE_MAX];
+};
+
+struct profiler_state {
+  struct profiler_data data;
+  struct buffer buf;
+  void* backtrace_buf[DEFAULT_BUF_SIZE];
+  lua_State* L;
+  vmstate vmstate;
+};
+
+LUA_API void profile_start(lua_State* L, int fd);
+LUA_API void profile_stop(lua_State* L);
+
+#endif /* ifndef PROFILE */
+

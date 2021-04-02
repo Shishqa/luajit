@@ -1,22 +1,22 @@
-#include "buffer.h"
+#include "iobuffer.h"
 
-void init_buf(struct buffer* buf, int fd, size_t size) {
+void init_iobuf(struct iobuffer* buf, int fd, size_t size) {
   buf->data = (char*)calloc(size, sizeof(uint8_t));
   buf->pos = buf->data;
   buf->fd = fd;
   buf->size = size;
 }
 
-void release_buf(struct buffer* buf) { free(buf->data); }
+void release_iobuf(struct iobuffer* buf) { free(buf->data); }
 
-ssize_t flush_buf(struct buffer* buf) {
+ssize_t flush_iobuf(struct iobuffer* buf) {
   ssize_t bytes = write(buf->fd, buf->data, buf->pos - buf->data);
   buf->pos = buf->data;
 
   return bytes;
 }
 
-ssize_t write_buf(struct buffer* buf, const char* payload, size_t len) {
+ssize_t write_iobuf(struct iobuffer* buf, const char* payload, size_t len) {
   size_t total_bytes = 0;
 
   while (len != 0) {
@@ -31,7 +31,7 @@ ssize_t write_buf(struct buffer* buf, const char* payload, size_t len) {
     len -= chunck_size;
 
     if (buf->pos - buf->data == buf->size) {
-      if (-1 == flush_buf(buf)) {
+      if (-1 == flush_iobuf(buf)) {
         return -1;
       }
     }

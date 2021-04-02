@@ -1,24 +1,21 @@
 #ifndef WRITE
 #define WRITE
 
+#include <assert.h>
 #include <stdint.h>
-#include "profile.h"
-#include "callchain.h"
 
-struct test {
-  uint64_t lfunc;
-  uint64_t ffunc;
-  uint64_t cfunc;
-  uint64_t interp;
-  uint64_t trace;
-};
+#include "callchain.h"
+#include "profile.h"
+#include "../lj_profile.h"
+#include "../lj_profile_state_impl.h"
 
 void print_counters();
 
-void write_trace(struct profiler_state* ps);
-void write_lfunc(struct profiler_state* ps);
-void write_ffunc(struct profiler_state* ps);
-void write_cfunc(struct profiler_state* ps);
-void write_vmstate(struct profiler_state* ps);
+void write_trace(ProfileState* ps);
+void write_lfunc(ProfileState* ps);
+void write_ffunc(ProfileState* ps);
+void write_cfunc(ProfileState* ps);
+void write_vmstate(ProfileState* ps);
+void write_symtab(const struct global_State* g);
 
 #endif /* ifndef WRITE */

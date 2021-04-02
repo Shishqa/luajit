@@ -581,7 +581,7 @@ LJLIB_CF(jit_profile_start)
   setfuncV(L, lj_tab_set(L, registry, &key), func);
   lj_gc_anybarriert(L, registry);
   luaJIT_profile_start(L, mode ? strdata(mode) : "",
-		       (luaJIT_profile_callback)jit_profile_callback, L2);
+		       (luaJIT_profile_callback)jit_profile_callback, L2, 1);
   return 0;
 }
 

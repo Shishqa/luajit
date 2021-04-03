@@ -11,34 +11,56 @@ void print_counters(ProfileState* ps) {
       "\tffunc: %lu\n"
       "\tcfunc: %lu\n"
       "\tinterp: %lu\n"
-      "\ttrace: %lu\n",
-      ps->counters.vmstate[I], ps->counters.vmstate[I], ps->counters.vmstate[C],
-      ps->counters.vmstate[J], ps->counters.vmstate[N]);  // XXX not sure about states
+      "\ttrace: %lu\n"
+      "\tjit compiler: %lu\n"
+      "\tgarbage collector: %lu\n",
+      ps->counters.vmstate[LFUNC], ps->counters.vmstate[FFUNC],
+      ps->counters.vmstate[CFUNC], ps->counters.vmstate[INTERP],
+      ps->counters.vmstate[NATIVE], ps->counters.vmstate[JITCOMP],
+      ps->counters.vmstate[GCOLL]);
 }
 
-void write_trace(ProfileState* ps) { ++ps->counters.vmstate[N]; }
+void write_trace(ProfileState* ps) {
+  assert(ps != NULL);
+
+  ++ps->counters.vmstate[NATIVE];
+}
 
 void write_lfunc(ProfileState* ps) {
   assert(ps != NULL);
 
-  ++ps->counters.vmstate[I];
+  ++ps->counters.vmstate[LFUNC];
   dump_callchain_lfunc(ps);
 }
 
 void write_ffunc(ProfileState* ps) {
   assert(ps != NULL);
 
-  ++ps->counters.vmstate[I];
+  ++ps->counters.vmstate[INTERP];
 }
 
 void write_cfunc(ProfileState* ps) {
   assert(ps != NULL);
 
-  ++ps->counters.vmstate[C];
+  ++ps->counters.vmstate[CFUNC];
   dump_callchain_cfunc(ps);
 }
 
-void write_vmstate(ProfileState* ps) { ++ps->counters.vmstate[I]; }
+void write_interp(ProfileState* ps) {
+  assert(ps != NULL);
+
+  ++ps->counters.vmstate[INTERP];
+}
+void write_gcoll(ProfileState* ps) {
+  assert(ps != NULL);
+
+  ++ps->counters.vmstate[GCOLL];
+}
+void write_jitcomp(ProfileState* ps) {
+  assert(ps != NULL);
+
+  ++ps->counters.vmstate[JITCOMP];
+}
 
 void write_symtab(const struct global_State* g) {
   assert(g != NULL);
@@ -61,3 +83,16 @@ void write_symtab(const struct global_State* g) {
   }
 }
 
+typedef void (*stacktrace_func)(ProfileState* ps);
+static stacktrace_func stacktrace_handlers[] = {
+    write_trace, write_interp, write_lfunc,  write_ffunc,
+    write_cfunc, write_gcoll,  write_jitcomp};
+
+void write_stack(ProfileState* ps) {
+  assert(ps != NULL);
+
+  stacktrace_func handler;
+  handler = stacktrace_handlers[ps->vmstate];
+  assert(NULL != handler);
+  handler(ps);
+}

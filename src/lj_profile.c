@@ -19,10 +19,10 @@
 #include "lj_trace.h"
 #endif
 #include "lj_profile.h"
-#include "luajit.h"
-#include "profile/write.h"
-#include "profile/iobuffer.h"
 #include "lj_profile_state_impl.h"
+#include "luajit.h"
+#include "profile/iobuffer.h"
+#include "profile/write.h"
 
 #if LJ_PROFILE_SIGPROF
 
@@ -55,7 +55,6 @@ typedef unsigned int(WINAPI *WMM_TPFUNC)(unsigned int);
 #define profile_unlock(ps) LeaveCriticalSection(&ps->lock)
 
 #endif
-
 
 /* Sadly, we have to use a static profiler state.
 **
@@ -127,16 +126,17 @@ static void profile_trigger(ProfileState *ps) {
   mask = g->hookmask;
   if (!(mask & (HOOK_PROFILE | HOOK_VMEVENT))) { /* Set profile hook. */
     int st = g->vmstate;
-    ps->vmstate = st >= 0                 ? 'N'
-                  : st == ~LJ_VMST_INTERP ? 'I'
-                                          :
-                                          /* Stubs for profiler hooks. */
-                      st == ~LJ_VMST_LFUNC ? 'I'
-                  : st == ~LJ_VMST_FFUNC   ? 'I'
-                  : st == ~LJ_VMST_CFUNC   ? 'C'
-                  : st == ~LJ_VMST_GC      ? 'G'
-                                           : 'J';
+    ps->vmstate = st >= 0                 ? NATIVE
+                  : st == ~LJ_VMST_INTERP ? INTERP /* Stubs for profiler hooks. */
+                  : st == ~LJ_VMST_LFUNC  ? LFUNC
+                  : st == ~LJ_VMST_FFUNC   ? FFUNC
+                  : st == ~LJ_VMST_CFUNC   ? CFUNC
+                  : st == ~LJ_VMST_GC      ? GCOLL
+                                           : JITCOMP;
     g->hookmask = (mask | HOOK_PROFILE);
+    ++ps->counters.vmstate[ps->vmstate];
+    //write_stack(ps);
+
     lj_dispatch_update(g);
   }
   profile_unlock(ps);
@@ -312,6 +312,11 @@ LUA_API void luaJIT_profile_stop(lua_State *L) {
   ProfileState *ps = &profile_state;
   global_State *g = ps->g;
   if (G(L) == g) { /* Only stop profiler if started by this VM. */
+    flush_iobuf(&ps->obuf);
+    release_iobuf(&ps->obuf);
+    write_symtab(G(L));
+    print_counters(ps);
+
     profile_timer_stop(ps);
     g->hookmask &= ~HOOK_PROFILE;
     lj_dispatch_update(g);
@@ -322,13 +327,8 @@ LUA_API void luaJIT_profile_stop(lua_State *L) {
     lj_buf_free(g, &ps->sb);
     setmref(ps->sb.b, NULL);
     setmref(ps->sb.e, NULL);
+
     ps->g = NULL;
-
-    flush_iobuf(&ps->obuf);
-    release_iobuf(&ps->obuf);
-
-    write_symtab(G(L));
-    print_counters();
   }
 }
 

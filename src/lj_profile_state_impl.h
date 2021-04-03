@@ -7,7 +7,16 @@
 #include "luajit.h"
 #include "profile/iobuffer.h"
 
-enum PROFILE_CONSTANTS { N = 0, I = 1, C = 2, G = 3, J = 4, STATE_MAX = 5 };
+enum PROFILE_STATES {
+  NATIVE = 0,   // native (trace)
+  INTERP = 1,   // interpeted
+  LFUNC = 2,    // lfunc
+  FFUNC = 3,    // ffunc
+  CFUNC = 4,    // cfunc
+  GCOLL = 5,        // garbage collector
+  JITCOMP = 6,  // jit compiler
+  STATE_MAX = 7
+};
 
 typedef struct {
   uint64_t vmstate[STATE_MAX];
@@ -21,6 +30,7 @@ typedef struct ProfileState {
   void *data;                 /* Profiler callback data. */
   SBuf sb;                    /* String buffer for stack dumps. */
   struct iobuffer obuf;       /* IO buffer for profile data filedumps */
+  void* backtrace_buf[DEFAULT_BUF_SIZE];
   int interval;               /* Sample interval in milliseconds. */
   int samples;                /* Number of samples for next callback. */
   profile_counters counters;
@@ -29,7 +39,7 @@ typedef struct ProfileState {
   struct sigaction oldsa; /* Previous SIGPROF state. */
 #elif LJ_PROFILE_PTHREAD
   pthread_mutex_t lock; /* g->hookmask update lock. */
-  pthread_t thread;     /* Timer thread. */
+  pthread_t thread;    /* Timer thread. */
   int abort;            /* Abort timer thread. */
 #elif LJ_PROFILE_WTHREAD
 #if LJ_TARGET_WINDOWS

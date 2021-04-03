@@ -126,16 +126,17 @@ static void profile_trigger(ProfileState *ps) {
   mask = g->hookmask;
   if (!(mask & (HOOK_PROFILE | HOOK_VMEVENT))) { /* Set profile hook. */
     int st = g->vmstate;
-    ps->vmstate = st >= 0                 ? NATIVE
-                  : st == ~LJ_VMST_INTERP ? INTERP /* Stubs for profiler hooks. */
-                  : st == ~LJ_VMST_LFUNC  ? LFUNC
-                  : st == ~LJ_VMST_FFUNC   ? FFUNC
-                  : st == ~LJ_VMST_CFUNC   ? CFUNC
-                  : st == ~LJ_VMST_GC      ? GCOLL
-                                           : JITCOMP;
+    ps->vmstate = st >= 0 ? NATIVE
+                  : st == ~LJ_VMST_INTERP
+                      ? INTERP /* Stubs for profiler hooks. */
+                  : st == ~LJ_VMST_LFUNC ? LFUNC
+                  : st == ~LJ_VMST_FFUNC ? FFUNC
+                  : st == ~LJ_VMST_CFUNC ? CFUNC
+                  : st == ~LJ_VMST_GC    ? GCOLL
+                                         : JITCOMP;
     g->hookmask = (mask | HOOK_PROFILE);
     ++ps->counters.vmstate[ps->vmstate];
-    //write_stack(ps);
+    write_stack(ps);
 
     lj_dispatch_update(g);
   }

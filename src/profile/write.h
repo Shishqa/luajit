@@ -22,4 +22,6 @@ void write_jitcomp(ProfileState* ps);
 
 void write_symtab(const struct global_State* g);
 
+void write_lfunc_callback(void* data, lua_State* L, int samples, int vmstate);
+
 #endif /* ifndef WRITE */

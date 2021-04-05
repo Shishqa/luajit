@@ -3,6 +3,7 @@
 ** Copyright (C) 2005-2017 Mike Pall. See Copyright Notice in luajit.h
 */
 
+#include "lua.h"
 #define lj_profile_c
 #define LUA_CORE
 
@@ -136,7 +137,10 @@ static void profile_trigger(ProfileState *ps) {
                                          : JITCOMP;
     g->hookmask = (mask | HOOK_PROFILE);
     ++ps->counters.vmstate[ps->vmstate];
-    write_stack(ps);
+
+    if (ps->vmstate != LFUNC) {
+      write_stack(ps);
+    }
 
     lj_dispatch_update(g);
   }
@@ -263,7 +267,7 @@ static void profile_timer_stop(ProfileState *ps) {
 
 /* -- Public profiling API ------------------------------------------------ */
 
-/* Start profiling. */
+/* Start profiling with default profling API */
 LUA_API void luaJIT_profile_start(lua_State *L, const char *mode,
                                   luaJIT_profile_callback cb, void *data,
                                   int fd) {
@@ -306,6 +310,12 @@ LUA_API void luaJIT_profile_start(lua_State *L, const char *mode,
   lj_buf_init(L, &ps->sb);
   init_iobuf(&ps->obuf, fd, DEFAULT_BUF_SIZE);
   profile_timer_start(ps);
+}
+
+/* Start profiling with system wide profiler */
+LUA_API void luaJIT_extended_profile_start(lua_State *L, const char *mode,
+                                           int fd) {
+  luaJIT_profile_start(L, mode, write_lfunc_callback, &profile_state, fd);
 }
 
 /* Stop profiling. */

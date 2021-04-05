@@ -2,6 +2,10 @@
 
 #include <stdio.h>
 
+#include "callchain.h"
+
+void write_finalize(ProfileState* ps) { write_iobuf(&ps->obuf, "\n", 1); }
+
 void print_counters(ProfileState* ps) {
   assert(ps != NULL);
 
@@ -30,7 +34,9 @@ void write_lfunc(ProfileState* ps) {
   assert(ps != NULL);
 
   ++ps->counters.vmstate[LFUNC];
+  dump_callchain_cfunc(ps);
   dump_callchain_lfunc(ps);
+  write_finalize(ps);
 }
 
 void write_ffunc(ProfileState* ps) {
@@ -44,6 +50,7 @@ void write_cfunc(ProfileState* ps) {
 
   ++ps->counters.vmstate[CFUNC];
   dump_callchain_cfunc(ps);
+  write_finalize(ps);
 }
 
 void write_interp(ProfileState* ps) {

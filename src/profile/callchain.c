@@ -20,7 +20,6 @@ void dump_callchain_lfunc(ProfileState* ps) {
       luaJIT_profile_dumpstack(L, "F;", -4000, &dumpstr_len);
 
   write_iobuf(&ps->obuf, stack_dump, dumpstr_len);
-  write_iobuf(&ps->obuf, "\n", 1);
 }
 
 void dump_callchain_cfunc(ProfileState* ps) {
@@ -34,7 +33,6 @@ void dump_callchain_cfunc(ProfileState* ps) {
                                     // profiling overhead
     write_iobuf(&ps->obuf, ";", 1);
   }
-  write_iobuf(&ps->obuf, "\n", 1);
 
   free(names);
 }

@@ -9,6 +9,8 @@
 #include "callchain.h"
 #include "profile.h"
 
+void write_finalize(ProfileState* ps);
+
 void print_counters(ProfileState* ps);
 
 void write_trace(ProfileState* ps);

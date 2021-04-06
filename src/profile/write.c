@@ -69,27 +69,6 @@ void write_jitcomp(ProfileState* ps) {
   ++ps->counters.vmstate[JITCOMP];
 }
 
-void write_symtab(const struct global_State* g) {
-  assert(g != NULL);
-
-  const GCRef* iter = &g->gc.root;
-  const GCobj* o;
-
-  while ((o = gcref(*iter)) != NULL) {
-    switch (o->gch.gct) {
-      case (~LJ_TPROTO): {
-        const GCproto* pt = gco2pt(o);
-        printf("%lu %s %lu\n", (uintptr_t)pt, proto_chunknamestr(pt),
-               (uint64_t)pt->firstline);
-        break;
-      }
-      default:
-        break;
-    }
-    iter = &o->gch.nextgc;
-  }
-}
-
 typedef void (*stacktrace_func)(ProfileState* ps);
 static stacktrace_func stacktrace_handlers[] = {
     write_trace, write_interp, write_lfunc,  write_ffunc,

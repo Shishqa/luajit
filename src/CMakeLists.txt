@@ -72,6 +72,7 @@ make_source_list(SOURCES_PROFILER
     profile/write.c
     profile/iobuffer.c
     profile/callchain.c
+    profile/symtab.c
 )
 
 # Lua standard library + extensions by LuaJIT.

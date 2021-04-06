@@ -24,6 +24,7 @@
 #include "luajit.h"
 #include "profile/iobuffer.h"
 #include "profile/write.h"
+#include "profile/symtab.h"
 
 #if LJ_PROFILE_SIGPROF
 
@@ -303,12 +304,14 @@ LUA_API void luaJIT_profile_start(lua_State *L, const char *mode,
   ps->data = data;
   ps->samples = 0;
 
-  write_symtab(G(L));
   memset(ps->counters.vmstate, 0,
          sizeof(ps->counters.vmstate)); /* Init counters for each state */
 
   lj_buf_init(L, &ps->sb);
   init_iobuf(&ps->obuf, fd, DEFAULT_BUF_SIZE);
+
+  write_symtab(&ps->obuf, ps->g);
+
   profile_timer_start(ps);
 }
 
@@ -325,7 +328,7 @@ LUA_API void luaJIT_profile_stop(lua_State *L) {
   if (G(L) == g) { /* Only stop profiler if started by this VM. */
     flush_iobuf(&ps->obuf);
     release_iobuf(&ps->obuf);
-    write_symtab(G(L));
+    write_symtab(&ps->obuf, ps->g);
     print_counters(ps);
 
     profile_timer_stop(ps);

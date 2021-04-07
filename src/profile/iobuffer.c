@@ -1,41 +1,47 @@
 #include "iobuffer.h"
+#include "../lj_def.h"
 
-void init_iobuf(struct iobuffer* buf, int fd, size_t size) {
-  buf->data = (char*)calloc(size, sizeof(uint8_t));
-  buf->pos = buf->data;
+#include <errno.h>
+#include <stdio.h>
+
+void init_iobuf(struct iobuffer* buf, int fd) {
+  memset(buf->buf, 0, sizeof(buf->buf));
   buf->fd = fd;
-  buf->size = size;
 }
 
-void release_iobuf(struct iobuffer* buf) { free(buf->data); }
+size_t flush_iobuf(const void **buf_addr, size_t len, void *ctx) {
+  struct iobuffer *iobuf = ctx;
+  int fd = iobuf->fd;
+  
+  const void * const buf_start = *buf_addr;
+  const void *data = *buf_addr;
+  size_t write_total = 0;
 
-ssize_t flush_iobuf(struct iobuffer* buf) {
-  ssize_t bytes = write(buf->fd, buf->data, buf->pos - buf->data);
-  buf->pos = buf->data;
+  for (;;) {
+    const ssize_t written = write(fd, data, len - write_total);
 
-  return bytes;
-}
-
-ssize_t write_iobuf(struct iobuffer* buf, const char* payload, size_t len) {
-  size_t total_bytes = 0;
-
-  while (len != 0) {
-    size_t available_space = buf->size - (buf->pos - buf->data);
-
-    size_t chunck_size = available_space > len ? len : available_space;
-    memcpy(buf->pos, payload, chunck_size);
-
-    buf->pos += chunck_size;
-    payload += chunck_size;
-    total_bytes += chunck_size;
-    len -= chunck_size;
-
-    if (buf->pos - buf->data == buf->size) {
-      if (-1 == flush_iobuf(buf)) {
-        return -1;
+    if (LJ_UNLIKELY(written <= 0)) {
+      /* Re-tries write in case of EINTR. */
+      if (errno != EINTR) {
+	      /* Will be freed as whole chunk later. */
+	      *buf_addr = NULL;
+	      return write_total;
       }
+
+      errno = 0;
+      continue;
     }
+
+    write_total += written;
+    lua_assert(write_total <= len);
+
+    if (write_total == len)
+      break;
+
+    data = (uint8_t *)data + (ptrdiff_t)written;
   }
 
-  return total_bytes;
+  *buf_addr = buf_start;
+
+  return write_total;
 }

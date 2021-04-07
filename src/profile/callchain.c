@@ -2,6 +2,9 @@
 
 #include "../luajit.h"
 #include "profile_impl.h"
+#include <assert.h>
+
+#include <stdio.h>
 
 void dump_callchain_lfunc(struct profiler_state *ps) {
   /* IMPRORTANT
@@ -20,19 +23,19 @@ void dump_callchain_lfunc(struct profiler_state *ps) {
   const char* stack_dump =
       luaJIT_profile_dumpstack(L, "F;", -4000, &dumpstr_len);
 
-  write_iobuf(&ps->obuf, stack_dump, dumpstr_len);
+  lj_wbuf_addn(&ps->buf, stack_dump, dumpstr_len);
 }
 
 void dump_callchain_cfunc(struct profiler_state *ps) {
-  const int depth = backtrace(ps->backtrace_buf, DEFAULT_BUF_SIZE);
+  const int depth = backtrace(ps->backtrace_buf, 4096);
 
   char** names = backtrace_symbols(ps->backtrace_buf, depth);
 
   for (ssize_t i = depth - 1; i >= 0; --i) {
-    write_iobuf(&ps->obuf, names[i],
-                strlen(names[i]));  // FIXME definetely will cause massive
+    lj_wbuf_addn(&ps->buf, names[i],
+                 strlen(names[i]));  // FIXME definetely will cause massive
                                     // profiling overhead
-    write_iobuf(&ps->obuf, ";", 1);
+    lj_wbuf_addn(&ps->buf, ";", 1);
   }
 
   free(names);

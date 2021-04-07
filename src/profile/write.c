@@ -6,11 +6,6 @@
 #include "callchain.h"
 #include "profile_impl.h"
 
-void write_finalize(struct profiler_state *ps) 
-{ 
-  write_iobuf(&ps->obuf, "\n", 1); 
-}
-
 void print_counters(struct profiler_state *ps) 
 {
   for (size_t vmstate = 0; vmstate <= LJ_VMST_TRACE; vmstate++) {
@@ -27,14 +22,12 @@ void write_lfunc(struct profiler_state* ps) {
 
   dump_callchain_cfunc(ps);
   //dump_callchain_lfunc(ps);
-  write_finalize(ps);
 }
 
 void write_cfunc(struct profiler_state *ps) {
   assert(ps != NULL);
 
   dump_callchain_cfunc(ps);
-  write_finalize(ps);
 }
 
 typedef void (*stacktrace_func)(struct profiler_state *ps);

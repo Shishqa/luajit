@@ -10,18 +10,12 @@
 enum IOBUFFER_CONSTANTS { DEFAULT_BUF_SIZE = 4096 };
 
 struct iobuffer {
-  char* data;
-  char* pos;
-  size_t size;
   int fd;
+  uint8_t buf[DEFAULT_BUF_SIZE];
 };
 
-void init_iobuf(struct iobuffer* buf, int fd, size_t size);
+void init_iobuf(struct iobuffer *buf, int fd);
 
-ssize_t write_iobuf(struct iobuffer* buf, const char* payload, size_t len);
-
-ssize_t flush_iobuf(struct iobuffer* buf);
-
-void release_iobuf(struct iobuffer* buf);
+size_t flush_iobuf(const void **data, size_t len, void *opt);
 
 #endif /* ifndef BUFFER */

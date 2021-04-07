@@ -2,7 +2,7 @@
 #define SYMTAB 
 
 #include "../lj_obj.h"
-#include "iobuffer.h"
+#include "../lj_wbuf.h"
 
 struct lj_wbuf;
 struct global_State;
@@ -47,6 +47,6 @@ struct global_State;
 #define SYMTAB_TRACE ((uint8_t)1)
 #define SYMTAB_FINAL ((uint8_t)0x80)
 
-void write_symtab(struct iobuffer *out, const struct global_State *g);
+void write_symtab(struct lj_wbuf *out, const struct global_State *g);
 
 #endif /* ifndef SYMTAB */

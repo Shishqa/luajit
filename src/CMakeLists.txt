@@ -70,9 +70,9 @@ make_source_list(SOURCES_PROFILER
     lj_timer.c
     lj_memprof.c
     lj_profile.c
+    profile/iobuffer.c
     profile/profile.c
     profile/write.c
-    profile/iobuffer.c
     profile/callchain.c
     profile/symtab.c
 )
@@ -398,7 +398,7 @@ install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/luaconf.h   # Configuration header
     ${CMAKE_CURRENT_SOURCE_DIR}/lua.hpp     # Convenience wrapper for C++
     ${CMAKE_CURRENT_SOURCE_DIR}/luajit.h    # LuaJIT-specific header
-    ${CMAKE_CURRENT_SOURCE_DIR}/lj_system_profile.h    
+    ${CMAKE_CURRENT_SOURCE_DIR}/lj_sysprof.h    
     ${CMAKE_CURRENT_SOURCE_DIR}/lmisclib.h  # Miscellaneous C API extensions
   DESTINATION ${LUAJIT_INCLUDEDIR}
   PERMISSIONS

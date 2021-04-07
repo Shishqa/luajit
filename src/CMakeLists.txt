@@ -67,8 +67,10 @@ make_source_list(SOURCES_UTILS
 
 make_source_list(SOURCES_PROFILER
   SOURCES
+    lj_timer.c
     lj_memprof.c
     lj_profile.c
+    profile/profile.c
     profile/write.c
     profile/iobuffer.c
     profile/callchain.c

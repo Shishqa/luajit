@@ -72,6 +72,7 @@ make_source_list(SOURCES_PROFILER
     lj_memprof.c
     lj_profile.c
     profile/iobuffer.c
+    profile/shared_objects.c
     profile/profile.c
     profile/write.c
     profile/callchain.c

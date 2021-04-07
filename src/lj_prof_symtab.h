@@ -1,6 +1,8 @@
 #ifndef _LJ_PROF_SYMTAB
 #define _LJ_PROF_SYMTAB
 
+#include "lj_obj.h"
+
 #define LJS_CURRENT_VERSION 0x1
 
 /*

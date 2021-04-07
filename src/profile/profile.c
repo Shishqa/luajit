@@ -30,6 +30,7 @@
 #include "write.h"
 #include "../lj_prof_symtab.h"
 #include "iobuffer.h"
+#include "shared_objects.h"
 
 #include <pthread.h>
 
@@ -87,6 +88,7 @@ void lj_sysprof_start(lua_State *L, const struct lj_sysprof_options *opt) {
                ps->obuf.buf, sizeof(ps->obuf.buf));
 
   dump_symtab(&ps->buf, ps->g);
+  so_dump(&ps->buf);
 
   ps->timer.opt.interval = opt->interval;
   ps->timer.opt.callback = profile_signal_handler;

@@ -28,7 +28,7 @@
 #include "profile.h"
 #include "profile_impl.h"
 #include "write.h"
-#include "symtab.h"
+#include "../lj_prof_symtab.h"
 #include "iobuffer.h"
 
 #include <pthread.h>
@@ -83,10 +83,10 @@ void lj_sysprof_start(lua_State *L, const struct lj_sysprof_options *opt) {
          sizeof(ps->data.vmstate)); /* Init counters for each state */
 
   init_iobuf(&ps->obuf, opt->fd);
+  lj_wbuf_init(&ps->buf, flush_iobuf, &ps->obuf, 
+               ps->obuf.buf, sizeof(ps->obuf.buf));
 
-  lj_wbuf_init(&ps->buf, flush_iobuf, &ps->obuf, ps->obuf.buf, sizeof(ps->obuf.buf));
-
-  write_symtab(&ps->buf, ps->g);
+  dump_symtab(&ps->buf, ps->g);
 
   ps->timer.opt.interval = opt->interval;
   ps->timer.opt.callback = profile_signal_handler;
@@ -100,7 +100,6 @@ void lj_sysprof_stop(lua_State *L) {
 
   if (G(L) == g) {
     lj_timer_stop(&ps->timer);
-    write_symtab(&ps->buf, ps->g);
     
     print_counters(ps);
  

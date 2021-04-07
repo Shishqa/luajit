@@ -1,15 +1,7 @@
-#ifndef SYMTAB
-#define SYMTAB 
+#ifndef _LJ_PROF_SYMTAB
+#define _LJ_PROF_SYMTAB
 
-#include "../lj_obj.h"
-#include "../lj_wbuf.h"
-
-struct lj_wbuf;
-struct global_State;
-
-// TODO reuse symtab from memprof
-
-#define LJS_CURRENT_VERSION 0x2
+#define LJS_CURRENT_VERSION 0x1
 
 /*
 ** symtab format:
@@ -44,9 +36,8 @@ struct global_State;
 */
 
 #define SYMTAB_LFUNC ((uint8_t)0)
-#define SYMTAB_TRACE ((uint8_t)1)
 #define SYMTAB_FINAL ((uint8_t)0x80)
 
-void write_symtab(struct lj_wbuf *out, const struct global_State *g);
+void dump_symtab(struct lj_wbuf *out, const struct global_State *g);
 
-#endif /* ifndef SYMTAB */
+#endif /* ifndef _LJ_PROF_SYMTAB */

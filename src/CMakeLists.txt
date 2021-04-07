@@ -68,13 +68,13 @@ make_source_list(SOURCES_UTILS
 make_source_list(SOURCES_PROFILER
   SOURCES
     lj_timer.c
+    lj_prof_symtab.c
     lj_memprof.c
     lj_profile.c
     profile/iobuffer.c
     profile/profile.c
     profile/write.c
     profile/callchain.c
-    profile/symtab.c
 )
 
 # Lua standard library + extensions by LuaJIT.

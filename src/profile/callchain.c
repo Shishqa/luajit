@@ -1,8 +1,9 @@
 #include "callchain.h"
 
 #include "../luajit.h"
+#include "profile_impl.h"
 
-void dump_callchain_lfunc(ProfileState* ps) {
+void dump_callchain_lfunc(struct profiler_state *ps) {
   /* IMPRORTANT
    * This function should be called ONLY from
    * profiler callback since lua_State might be
@@ -22,7 +23,7 @@ void dump_callchain_lfunc(ProfileState* ps) {
   write_iobuf(&ps->obuf, stack_dump, dumpstr_len);
 }
 
-void dump_callchain_cfunc(ProfileState* ps) {
+void dump_callchain_cfunc(struct profiler_state *ps) {
   const int depth = backtrace(ps->backtrace_buf, DEFAULT_BUF_SIZE);
 
   char** names = backtrace_symbols(ps->backtrace_buf, depth);

@@ -1,91 +1,71 @@
 #include "write.h"
 
+#include <stdint.h>
 #include <stdio.h>
 
 #include "callchain.h"
+#include "profile_impl.h"
 
-void write_finalize(ProfileState* ps) { write_iobuf(&ps->obuf, "\n", 1); }
-
-void print_counters(ProfileState* ps) {
-  assert(ps != NULL);
-
-  printf(
-      "counters:\n"
-      "\tlfunc: %lu\n"
-      "\tffunc: %lu\n"
-      "\tcfunc: %lu\n"
-      "\tinterp: %lu\n"
-      "\ttrace: %lu\n"
-      "\tjit compiler: %lu\n"
-      "\tgarbage collector: %lu\n",
-      ps->counters.vmstate[LFUNC], ps->counters.vmstate[FFUNC],
-      ps->counters.vmstate[CFUNC], ps->counters.vmstate[INTERP],
-      ps->counters.vmstate[NATIVE], ps->counters.vmstate[JITCOMP],
-      ps->counters.vmstate[GCOLL]);
+void write_finalize(struct profiler_state *ps) 
+{ 
+  write_iobuf(&ps->obuf, "\n", 1); 
 }
 
-void write_trace(ProfileState* ps) {
-  assert(ps != NULL);
-
-  ++ps->counters.vmstate[NATIVE];
+void print_counters(struct profiler_state *ps) 
+{
+  for (size_t vmstate = 0; vmstate <= LJ_VMST_TRACE; vmstate++) {
+    printf("state %lu: %lu\n", vmstate, ps->data.vmstate[vmstate]);
+  }
 }
 
-void write_lfunc(ProfileState* ps) {
+void write_dummy(struct profiler_state *ps) {
+  UNUSED(ps);
+}
+
+void write_lfunc(struct profiler_state* ps) {
   assert(ps != NULL);
 
-  ++ps->counters.vmstate[LFUNC];
   dump_callchain_cfunc(ps);
-  dump_callchain_lfunc(ps);
+  //dump_callchain_lfunc(ps);
   write_finalize(ps);
 }
 
-void write_ffunc(ProfileState* ps) {
+void write_cfunc(struct profiler_state *ps) {
   assert(ps != NULL);
 
-  ++ps->counters.vmstate[INTERP];
-}
-
-void write_cfunc(ProfileState* ps) {
-  assert(ps != NULL);
-
-  ++ps->counters.vmstate[CFUNC];
   dump_callchain_cfunc(ps);
   write_finalize(ps);
 }
 
-void write_interp(ProfileState* ps) {
-  assert(ps != NULL);
+typedef void (*stacktrace_func)(struct profiler_state *ps);
 
-  ++ps->counters.vmstate[INTERP];
-}
-void write_gcoll(ProfileState* ps) {
-  assert(ps != NULL);
-
-  ++ps->counters.vmstate[GCOLL];
-}
-void write_jitcomp(ProfileState* ps) {
-  assert(ps != NULL);
-
-  ++ps->counters.vmstate[JITCOMP];
-}
-
-typedef void (*stacktrace_func)(ProfileState* ps);
 static stacktrace_func stacktrace_handlers[] = {
-    write_trace, write_interp, write_lfunc,  write_ffunc,
-    write_cfunc, write_gcoll,  write_jitcomp};
+  write_dummy, /* LJ_VMST_INTERP */
+  write_lfunc, /* LJ_VMST_LFUNC */
+  write_dummy, /* LJ_VMST_FFUNC */
+  write_cfunc, /* LJ_VMST_CFUNC */
+  write_dummy, /* LJ_VMST_GC */
+  write_dummy, /* LJ_VMST_EXIT */
+  write_dummy, /* LJ_VMST_RECORD */
+  write_dummy, /* LJ_VMST_OPT */
+  write_dummy, /* LJ_VMST_ASM */
+  write_dummy  /* TRACE */
+};
 
-void write_stack(ProfileState* ps) {
+void write_stack(struct profiler_state *ps, uint32_t vmstate) {
   assert(ps != NULL);
 
   stacktrace_func handler;
-  handler = stacktrace_handlers[ps->vmstate];
+  handler = stacktrace_handlers[vmstate];
   assert(NULL != handler);
   handler(ps);
 }
 
+/*
 void write_lfunc_callback(void* data, lua_State* L, int samples, int vmstate) {
   ProfileState* ps = data;
   if (ps->vmstate == LFUNC) {
     write_lfunc(ps);
   }
 }
+*/

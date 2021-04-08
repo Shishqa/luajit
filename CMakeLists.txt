@@ -11,6 +11,11 @@
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 project(LuaJIT C)
 
+set(CMAKE_BUILD_TYPE Debug)
+
+set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+
 # XXX: Originally CMake machinery is introduced to make LuaJIT
 # testing self-sufficient. Since there are only few systems
 # covered by the tests in our CI, there is no need to support

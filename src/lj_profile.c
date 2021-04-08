@@ -137,10 +137,7 @@ static void profile_trigger(ProfileState *ps) {
                                          : JITCOMP;
     g->hookmask = (mask | HOOK_PROFILE);
     ++ps->counters.vmstate[ps->vmstate];
-
-    if (ps->vmstate != LFUNC) {
-      write_stack(ps);
-    }
+    write_stack(ps);
 
     lj_dispatch_update(g);
   }

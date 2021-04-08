@@ -17,7 +17,7 @@ void dump_callchain_lfunc(ProfileState* ps) {
   size_t dumpstr_len = 0;
 
   const char* stack_dump =
-      luaJIT_profile_dumpstack(L, "F;", -4000, &dumpstr_len);
+      luaJIT_profile_dumpstack(L, "F;", INT32_MIN, &dumpstr_len);
 
   write_iobuf(&ps->obuf, stack_dump, dumpstr_len);
 }

@@ -105,8 +105,8 @@ void write_stack(ProfileState* ps) {
 }
 
 void write_lfunc_callback(void* data, lua_State* L, int samples, int vmstate) {
-  ProfileState* ps = data;
+  /*ProfileState* ps = data;
   if (ps->vmstate == LFUNC) {
     write_lfunc(ps);
-  }
+  }*/
 }

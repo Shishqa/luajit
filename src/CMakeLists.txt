@@ -74,7 +74,7 @@ make_source_list(SOURCES_PROFILER
     profile/iobuffer.c
     profile/shared_objects.c
     profile/profile.c
-    profile/write.c
+    profile/stream.c
     profile/callchain.c
 )
 

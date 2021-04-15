@@ -1,43 +1,113 @@
 #include "callchain.h"
 
 #include "../luajit.h"
+#include "../lj_frame.h"
+
 #include "profile_impl.h"
 #include <assert.h>
 
+#include <stdint.h>
 #include <stdio.h>
 
-void dump_callchain_lfunc(struct profiler_state *ps) {
+/*============================================================================*/
+enum CALLCHAIN_TYPE {
+  CALLCHAIN_NATIVE = 0xFF,
+  CALLCHAIN_LUA = 0xFA,
+  CALLCHAIN_TRACE = 0xBB
+};
+/*============================================================================*/
+
+enum PROF_FRAME_TYPE {
+  LFUNC,
+  CFUNC,
+  FFUNC
+};
+
+void dump_lua_state(struct profiler_state *ps) {
+  UNUSED(ps);
+}
+
+void dump_lfunc(struct lj_wbuf *buf, GCfunc *func) 
+{
+  GCproto *pt = funcproto(func);
+  lj_wbuf_addu64(buf, LFUNC);
+  lj_wbuf_addu64(buf, (uintptr_t)pt); 
+}
+
+void dump_cfunc(struct lj_wbuf *buf, GCfunc *func) 
+{
+  lj_wbuf_addu64(buf, CFUNC);
+  lj_wbuf_addu64(buf, (uintptr_t)func->c.f);
+}
+
+void dump_ffunc(struct lj_wbuf *buf, GCfunc *func) 
+{
+  lj_wbuf_addu64(buf, FFUNC);
+  lj_wbuf_addu64(buf, func->c.ffid);
+}
+
+void dump_callchain_lua(struct profiler_state *ps) 
+{
   /* IMPRORTANT
    * This function should be called ONLY from
    * profiler callback since lua_State might be
    * not consistent during signal handling
    * */
 
-  assert(ps != NULL);
+  struct lj_wbuf* buf = &ps->buf;
 
-  lua_State* L = gco2th(gcref(ps->g->cur_L));
+  lua_State *L = gco2th(gcref(ps->g->cur_L));
   assert(L != NULL);
 
-  size_t dumpstr_len = 0;
+  cTValue *frame, *nextframe, *bot = tvref(L->stack) + LJ_FR2;
+  int level = 0;
 
-  const char* stack_dump =
-      luaJIT_profile_dumpstack(L, "F;", -4000, &dumpstr_len);
+  /* Traverse frames backwards. */
+  for (nextframe = frame = L->base-1; frame > bot; ) {
+    if (frame_gc(frame) == obj2gco(L))
+      goto next;  /* Skip dummy frames. See lj_err_optype_call(). */
+  
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+    GCfunc *fn = frame_func(frame);
 
-  lj_wbuf_addn(&ps->buf, stack_dump, dumpstr_len);
-}
+    if (fn == NULL) {
+      fprintf(stderr, "bad func\n"); 
+      return;
+    }
 
-void dump_callchain_cfunc(struct profiler_state *ps) {
-  const int depth = backtrace(ps->backtrace_buf, 4096);
+    if (isluafunc(fn)) {
+      dump_lfunc(buf, fn); 
+    } else if (isffunc(fn)) {
+      dump_ffunc(buf, fn); 
+    } else {
+      dump_cfunc(buf, fn); 
+    }
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-  char** names = backtrace_symbols(ps->backtrace_buf, depth);
+    level++;
 
-  for (ssize_t i = depth - 1; i >= 0; --i) {
-    lj_wbuf_addn(&ps->buf, names[i],
-                 strlen(names[i]));  // FIXME definetely will cause massive
-                                    // profiling overhead
-    lj_wbuf_addn(&ps->buf, ";", 1);
+next:
+    nextframe = frame;
+    if (frame_islua(frame)) {
+      frame = frame_prevl(frame);
+    } else {
+      frame = frame_prevd(frame);
+    }
   }
-
-  free(names);
 }
 
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+
+void dump_callchain_native(struct profiler_state *ps) {
+  struct lj_wbuf* buf = &ps->buf;
+
+  const int depth =
+      backtrace(ps->backtrace_buf,
+                sizeof(ps->backtrace_buf) / sizeof(*ps->backtrace_buf));
+
+  lj_wbuf_addu64(buf, CALLCHAIN_NATIVE);
+  lj_wbuf_addu64(buf, depth);
+  lj_wbuf_addn(buf, ps->backtrace_buf, depth * sizeof(*ps->backtrace_buf));
+}
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/

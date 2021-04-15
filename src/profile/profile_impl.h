@@ -48,4 +48,8 @@ struct profiler_state {
   struct lj_timer timer;
 };
 
+void stream_event(struct profiler_state* ps, uint32_t vmstate);
+
+void print_counters(struct profiler_state* ps);
+
 #endif /* ifndef PROFILE_IMPL_H */

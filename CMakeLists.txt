@@ -94,7 +94,7 @@ endif()
 # tracebacks and unwinding are not affected -- the assembler part
 # has frame unwind information and GCC emits it where needed (x64)
 # or with -g.
-AppendFlags(CMAKE_C_FLAGS -fomit-frame-pointer -fno-stack-protector)
+AppendFlags(CMAKE_C_FLAGS -fno-omit-frame-pointer -g)
 
 # Redefined to benefit from expanding macros in gdb.
 set(CMAKE_C_FLAGS_DEBUG "-g -ggdb3")

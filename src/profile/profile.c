@@ -20,14 +20,12 @@
 #include "../lj_trace.h"
 #endif
 
-#include "../lj_profile.h"
 #include "../luajit.h"
 
 #include "../lj_wbuf.h"
 
 #include "profile.h"
 #include "profile_impl.h"
-#include "write.h"
 #include "../lj_prof_symtab.h"
 #include "iobuffer.h"
 #include "shared_objects.h"
@@ -60,7 +58,7 @@ void profile_signal_handler(int sig, siginfo_t* info, void* ctx)
   uint32_t vmstate = _vmstate < LJ_VMST_TRACE ? _vmstate : LJ_VMST_TRACE;
   ++ps->data.vmstate[vmstate];
 
-  write_stack(ps, vmstate);
+  stream_event(ps, vmstate);
 }
 
 /* -- Public profiling API ------------------------------------------------ */
@@ -103,7 +101,7 @@ void lj_sysprof_stop(lua_State *L) {
   if (G(L) == g) {
     lj_timer_stop(&ps->timer);
     
-    print_counters(ps);
+    //print_counters(ps);
  
     lj_wbuf_flush(&ps->buf);
     lj_wbuf_terminate(&ps->buf);

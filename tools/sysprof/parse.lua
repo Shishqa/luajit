@@ -8,150 +8,72 @@ local bit = require "bit"
 local band = bit.band
 local lshift = bit.lshift
 
+local io = require('io')
+
 local string_format = string.format
 
-local LJM_MAGIC = "ljm"
-local LJM_CURRENT_VERSION = 1
+local LJP_MAGIC = "ljp"
+local LJP_CURRENT_VERSION = 1
 
-local LJM_EPILOGUE_HEADER = 0x80
+local LJP_EPILOGUE_HEADER = 0x80
 
-local AEVENT_ALLOC = 1
-local AEVENT_FREE = 2
-local AEVENT_REALLOC = 3
+local CALLCHAIN_NATIVE = 0 
+local CALLCHAIN_LUA = 1
+local CALLCHAIN_TRACE = 2 
 
-local AEVENT_MASK = 0x3
-
-local ASOURCE_INT = lshift(1, 2)
-local ASOURCE_LFUNC = lshift(2, 2)
-local ASOURCE_CFUNC = lshift(3, 2)
-
-local ASOURCE_MASK = lshift(0x3, 2)
+local BOT_FRAME = 0
+local LFUNC = 1
+local CFUNC = 2
+local FFUNC = 3
 
 local M = {}
 
-local function new_event(loc)
-  return {
-    loc = loc,
-    num = 0,
-    free = 0,
-    alloc = 0,
-    primary = {},
-  }
-end
+local function parse_native_callchain(reader)
+  local callchain_header = reader:read_octet() 
+  local callchain_size = reader:read_uleb128()
+  -- print('native '..callchain_header..' '..callchain_size)
 
-local function link_to_previous(heap_chunk, e)
-  -- Memory at this chunk was allocated before we start tracking.
-  if heap_chunk then
-    -- Save Lua code location (line) by address (id).
-    e.primary[heap_chunk[2]] = heap_chunk[3]
+  while callchain_size ~= 0 do
+    local addr = reader:read_uleb128()
+    io.write(string.format('%d', addr))
+    callchain_size = callchain_size - 1
+    if callchain_size ~= 0 then
+      io.write(";")
+    end
   end
+  io.write("\n")
 end
 
-local function id_location(addr, line)
-  return string_format("f%#xl%d", addr, line), {
-    addr = addr,
-    line = line,
-  }
-end
+local function parse_lua_callchain(reader)
+  local callchain_header = reader:read_octet()
+  -- print('lua '..callchain_header)
+  while true do
+    local frame_header = reader:read_octet()
 
-local function parse_location(reader, asource)
-  if asource == ASOURCE_INT then
-    return id_location(0, 0)
-  elseif asource == ASOURCE_CFUNC then
-    return id_location(reader:read_uleb128(), 0)
-  elseif asource == ASOURCE_LFUNC then
-    return id_location(reader:read_uleb128(), reader:read_uleb128())
+    if frame_header == 0 then
+      local addr = reader:read_uleb128()
+      print('lua '..string.format('%d', addr))
+    elseif frame_header == 1 then
+      local addr = reader:read_uleb128()
+      print('cfunc '..string.format('%d', addr))
+    elseif frame_header == 2 then
+      local addr = reader:read_uleb128()
+      print('ffunc '..string.format('%d', addr))
+    else
+      break
+    end
+
   end
-  error("Unknown asource "..asource)
-end
 
-local function parse_alloc(reader, asource, events, heap)
-  local id, loc = parse_location(reader, asource)
-
-  local naddr = reader:read_uleb128()
-  local nsize = reader:read_uleb128()
-
-  if not events[id] then
-    events[id] = new_event(loc)
-  end
-  local e = events[id]
-  e.num = e.num + 1
-  e.alloc = e.alloc + nsize
-
-  heap[naddr] = {nsize, id, loc}
-end
-
-local function parse_realloc(reader, asource, events, heap)
-  local id, loc = parse_location(reader, asource)
-
-  local oaddr = reader:read_uleb128()
-  local osize = reader:read_uleb128()
-  local naddr = reader:read_uleb128()
-  local nsize = reader:read_uleb128()
-
-  if not events[id] then
-    events[id] = new_event(loc)
-  end
-  local e = events[id]
-  e.num = e.num + 1
-  e.free = e.free + osize
-  e.alloc = e.alloc + nsize
-
-  link_to_previous(heap[oaddr], e)
-
-  heap[oaddr] = nil
-  heap[naddr] = {nsize, id, loc}
-end
-
-local function parse_free(reader, asource, events, heap)
-  local id, loc = parse_location(reader, asource)
-
-  local oaddr = reader:read_uleb128()
-  local osize = reader:read_uleb128()
-
-  if not events[id] then
-    events[id] = new_event(loc)
-  end
-  local e = events[id]
-  e.num = e.num + 1
-  e.free = e.free + osize
-
-  link_to_previous(heap[oaddr], e)
-
-  heap[oaddr] = nil
-end
-
-local parsers = {
-  [AEVENT_ALLOC] = {evname = "alloc", parse = parse_alloc},
-  [AEVENT_FREE] = {evname = "free", parse = parse_free},
-  [AEVENT_REALLOC] = {evname = "realloc", parse = parse_realloc},
-}
-
-local function ev_header_is_valid(evh)
-  return evh <= 0x0f or evh == LJM_EPILOGUE_HEADER
-end
-
--- Splits event header into event type (aka aevent = allocation
--- event) and event source (aka asource = allocation source).
-local function ev_header_split(evh)
-  return band(evh, AEVENT_MASK), band(evh, ASOURCE_MASK)
 end
 
 local function parse_event(reader, events)
-  local ev_header = reader:read_octet()
-
-  assert(ev_header_is_valid(ev_header), "Bad ev_header "..ev_header)
-
-  if ev_header == LJM_EPILOGUE_HEADER then
+  if reader:eof() then
     return false
   end
-
-  local aevent, asource = ev_header_split(ev_header)
-  local parser = parsers[aevent]
-
-  assert(parser, "Bad aevent "..aevent)
-
-  parser.parse(reader, asource, events[parser.evname], events.heap)
+  
+  parse_lua_callchain(reader)
+  parse_native_callchain(reader)
 
   return true
 end
@@ -169,14 +91,14 @@ function M.parse(reader)
   -- Dummy-consume reserved bytes.
   local _ = reader:read_octets(3)
 
-  if magic ~= LJM_MAGIC then
+  if magic ~= LJP_MAGIC then
     error("Bad LJM format prologue: "..magic)
   end
 
-  if string.byte(version) ~= LJM_CURRENT_VERSION then
+  if string.byte(version) ~= LJP_CURRENT_VERSION then
     error(string_format(
       "LJM format version mismatch: the tool expects %d, but your data is %d",
-      LJM_CURRENT_VERSION,
+      LJP_CURRENT_VERSION,
       string.byte(version)
     ))
   end

@@ -1,44 +1,37 @@
--- Parser of LuaJIT's symtab binary stream.
--- The format spec can be found in <src/lj_memprof.h>.
---
--- Major portions taken verbatim or adapted from the LuaVela.
--- Copyright (C) 2015-2019 IPONWEB Ltd.
-
 local bit = require "bit"
 
 local band = bit.band
 local string_format = string.format
 
-local LJS_MAGIC = "ljs"
+local LJS_MAGIC = "ljso"
 local LJS_CURRENT_VERSION = 1
 local LJS_EPILOGUE_HEADER = 0x80
 local LJS_SYMTYPE_MASK = 0x03
 
-local SYMTAB_LFUNC = 0
+local SO_SHARED = 0
 
 local M = {}
 
 -- Parse a single entry in a symtab: lfunc symbol.
 local function parse_sym_lfunc(reader, symtab)
-  local sym_addr = reader:read_uleb128()
-  local sym_chunk = reader:read_string()
-  local sym_line = reader:read_uleb128()
+  local so_addr = reader:read_uleb128()
+  local so_path = reader:read_string()
 
-  print("func "..sym_chunk.." "..sym_addr)
+  print("so: "..so_path.." "..string.format('%d', so_addr))
 
-  symtab[sym_addr] = {
-    source = sym_chunk,
-    linedefined = sym_line,
+  symtab[so_addr] = {
+    path = so_path,
+    symbols = {}
   }
 end
 
 local parsers = {
-  [SYMTAB_LFUNC] = parse_sym_lfunc,
+  [SO_SHARED] = parse_sym_lfunc,
 }
 
 function M.parse(reader)
   local symtab = {}
-  local magic = reader:read_octets(3)
+  local magic = reader:read_octets(4)
   local version = reader:read_octets(1)
 
   -- Dummy-consume reserved bytes.

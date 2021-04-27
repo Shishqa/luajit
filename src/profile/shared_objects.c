@@ -8,17 +8,11 @@
 
 #include "shared_objects.h"
 
-static int count_shared_obj(struct dl_phdr_info *info, size_t size,
-                            void *counter) {
-  (*(size_t *)counter)++;
-  return 0;
-}
-
 static void write_so_entry(struct lj_wbuf *buf, const char *name,
                            ElfW(Addr) addr) {
-  lj_wbuf_addstring(buf, name);
+  lj_wbuf_addbyte(buf, SOTAB_SHARED);
   lj_wbuf_addu64(buf, addr);
-//  printf("%s %lu\n", name, addr);
+  lj_wbuf_addstring(buf, name);
 }
 
 static int write_shared_obj(struct dl_phdr_info *info, size_t size,
@@ -43,13 +37,14 @@ static int write_shared_obj(struct dl_phdr_info *info, size_t size,
   return 0;
 }
 
+static const uint8_t ljso_header[] = {'l', 'j', 's', 'o', LJSO_CURRENT_VERSION,
+                                      0x0, 0x0, 0x0};
+
 void so_dump(struct lj_wbuf *buf) {
 
-  size_t num = 0;
-  dl_iterate_phdr(count_shared_obj, &num);
+  lj_wbuf_addn(buf, ljso_header, sizeof(ljso_header));
 
-  lj_wbuf_addu64(buf, num);
-
-  //printf("shared objects: %lu\n", num);
   dl_iterate_phdr(write_shared_obj, buf);
+
+  lj_wbuf_addbyte(buf, SOTAB_FINAL);
 }

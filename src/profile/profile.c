@@ -1,11 +1,11 @@
 #define _GNU_SOURCE
 #include <ucontext.h>
 
-#include "../lua.h"
 #include "../lj_obj.h"
+#include "../lua.h"
 #include <stdint.h>
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <signal.h>
 
@@ -24,16 +24,20 @@
 
 #include "../lj_wbuf.h"
 
-#include "profile.h"
-#include "profile_impl.h"
 #include "../lj_prof_symtab.h"
 #include "iobuffer.h"
+#include "profile.h"
+#include "profile_impl.h"
 #include "shared_objects.h"
 
 #include <pthread.h>
 
-
 static struct profiler_state profiler_state;
+
+static const uint8_t LJP_FORMAT_VERSION = 0x1;
+
+static const uint8_t ljp_header[] = { 'l', 'j', 'p', LJP_FORMAT_VERSION, 
+  0x0, 0x0, 0x0 };
 
 /* -- Main Payload -------------------------------------------------------- */
 
@@ -48,7 +52,7 @@ void profile_signal_handler(int sig, siginfo_t* info, void* ctx)
   lua_assert(pthread_self() == ps->thread);
 
   ps->data.samples++;
-  
+
   global_State *g = ps->g;
   ps->vmstate = g->vmstate;
 
@@ -69,7 +73,8 @@ void lj_sysprof_start(lua_State *L, const struct lj_sysprof_options *opt) {
 
   if (ps->g) {
     lj_sysprof_stop(L);
-    if (ps->g) return; /* Profiler in use by another VM. */
+    if (ps->g)
+      return; /* Profiler in use by another VM. */
   }
 
   ps->g = G(L);
@@ -78,15 +83,17 @@ void lj_sysprof_start(lua_State *L, const struct lj_sysprof_options *opt) {
   memcpy(&ps->opt, opt, sizeof(ps->opt));
 
   ps->data.samples = 0;
-  memset(ps->data.vmstate, 0, 
+  memset(ps->data.vmstate, 0,
          sizeof(ps->data.vmstate)); /* Init counters for each state */
 
   init_iobuf(&ps->obuf, opt->fd);
-  lj_wbuf_init(&ps->buf, flush_iobuf, &ps->obuf, 
-               ps->obuf.buf, sizeof(ps->obuf.buf));
+  lj_wbuf_init(&ps->buf, flush_iobuf, &ps->obuf, ps->obuf.buf,
+               sizeof(ps->obuf.buf));
 
   dump_symtab(&ps->buf, ps->g);
   so_dump(&ps->buf);
+
+  lj_wbuf_addn(&ps->buf, ljp_header, sizeof(ljp_header));
 
   ps->timer.opt.interval = opt->interval;
   ps->timer.opt.callback = profile_signal_handler;
@@ -100,9 +107,9 @@ void lj_sysprof_stop(lua_State *L) {
 
   if (G(L) == g) {
     lj_timer_stop(&ps->timer);
-    
-    //print_counters(ps);
- 
+
+    // print_counters(ps);
+
     lj_wbuf_flush(&ps->buf);
     lj_wbuf_terminate(&ps->buf);
 

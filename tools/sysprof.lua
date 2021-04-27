@@ -1,6 +1,7 @@
 local bufread = require "utils.bufread"
-local memprof = require "memprof.parse"
+local sysprof = require "sysprof.parse"
 local symtab = require "utils.symtab"
+local sotab = require "utils.sotab"
 local view = require "memprof.humanize"
 
 local stdout, stderr = io.stdout, io.stderr
@@ -81,7 +82,11 @@ end
 local function dump(inputfile)
   local reader = bufread.new(inputfile)
   local symbols = symtab.parse(reader)
-  local events = memprof.parse(reader, symbols)
+  local so = sotab.parse(reader)
+
+  sysprof.parse(reader)
+
+  --[[ local events = memprof.parse(reader, symbols)
 
   stdout:write("ALLOCATIONS", "\n")
   view.render(events.alloc, symbols)
@@ -94,6 +99,8 @@ local function dump(inputfile)
   stdout:write("DEALLOCATIONS", "\n")
   view.render(events.free, symbols)
   stdout:write("\n")
+
+  --]]
 
   os.exit(0)
 end

@@ -18,8 +18,8 @@ typedef void (*event_handler)(struct profiler_state *ps);
 
 static event_handler event_handlers[] = {
   write_stub,      /* LJ_VMST_INTERP */
-  write_full_info, /* LJ_VMST_LFUNC */
-  write_full_info, /* LJ_VMST_FFUNC */
+  write_stub, /* LJ_VMST_LFUNC */
+  write_stub, /* LJ_VMST_FFUNC */
   write_full_info, /* LJ_VMST_CFUNC */
   write_stub,      /* LJ_VMST_GC */
   write_stub,      /* LJ_VMST_EXIT */

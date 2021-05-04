@@ -15,9 +15,10 @@ static void write_so_entry(struct lj_wbuf *buf, const char *name,
   lj_wbuf_addstring(buf, name);
 }
 
+#define SO_MAX_PATH_LENGTH 256
+
 static int write_shared_obj(struct dl_phdr_info *info, size_t size,
                             void *data) {
-  static const size_t SO_MAX_PATH_LENGTH = 256;
   char name[SO_MAX_PATH_LENGTH] = {};
 
   struct lj_wbuf *buf = data;

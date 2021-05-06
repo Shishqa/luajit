@@ -70,9 +70,10 @@ void dump_callchain_lua(struct profiler_state *ps)
     if (frame_gc(frame) == obj2gco(L)) {
       goto next;  /* Skip dummy frames. See lj_err_optype_call(). */
     }
- 
-    fprintf(stderr, "new frame %p nextframe %p bot %p\n", frame, nextframe, bot);
+
     break;
+
+    fprintf(stderr, "new frame %p nextframe %p bot %p\n", frame, nextframe, bot);
 
     GCfunc *fn = frame_func(frame);
     if (!fn) {
@@ -111,7 +112,6 @@ void dump_callchain_native(struct profiler_state *ps) {
 
   const int depth =
       backtrace(ps->backtrace_buf, 4000);
-  printf("depth %d\n", depth);
 
   lj_wbuf_addbyte(buf, CALLCHAIN_NATIVE);
   lj_wbuf_addu64(buf, (uint64_t)depth);

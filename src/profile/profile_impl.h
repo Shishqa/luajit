@@ -11,19 +11,6 @@
 
 #include "iobuffer.h"
 
-/*
-enum PROFILE_STATE {
-  NATIVE = 0,   // native (trace)
-  INTERP = 1,   // interpeted
-  LFUNC = 2,    // lfunc
-  FFUNC = 3,    // ffunc
-  CFUNC = 4,    // cfunc
-  GCOLL = 5,    // garbage collector
-  JITCOMP = 6,  // jit compiler
-  STATE_MAX = 7
-};
-*/
-
 struct profile_data {
   uint64_t samples;
   uint64_t vmstate[LJ_VMST__MAX + 1];
@@ -33,7 +20,9 @@ struct sig_context {
   uint64_t rip;
 };
 
-#define BACKTRACE_BUF_SIZE 4096
+enum {
+  BACKTRACE_BUF_SIZE = 4096
+};
 
 struct profiler_state {
   global_State *g;

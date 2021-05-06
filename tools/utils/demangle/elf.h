@@ -7,7 +7,7 @@
 #ifndef _UJPP_ELF_H
 #define _UJPP_ELF_H
 
-#include <stdint.h>
+#include <stdlib.h>
 
 struct vector;
 

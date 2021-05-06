@@ -10,6 +10,13 @@ local LJS_SYMTYPE_MASK = 0x03
 
 local SO_SHARED = 0
 
+local ffi = require "ffi"
+ffi.cdef[[
+void demangle(const char* path, uint64_t base);
+]]
+
+local demangle = ffi.load("demangle")
+
 local M = {}
 
 -- Parse a single entry in a symtab: lfunc symbol.
@@ -18,7 +25,8 @@ local function parse_sym_lfunc(reader, symtab)
   local so_path = reader:read_string()
 
   print("so: "..so_path.." "..string.format('%d', so_addr))
-
+  demangle.demangle(so_path, so_addr)  
+    
   symtab[so_addr] = {
     path = so_path,
     symbols = {}

@@ -38,17 +38,25 @@ static void elf_check_file(const void *buf)
 {
 	Elf64_Ehdr *hdr = (Elf64_Ehdr *)buf;
 
+  fprintf(stderr, "magic\n");
+
 	if (ELFMAG0 != hdr->e_ident[EI_MAG0] ||
 	    ELFMAG1 != hdr->e_ident[EI_MAG1] ||
 	    ELFMAG2 != hdr->e_ident[EI_MAG2] ||
 	    ELFMAG3 != hdr->e_ident[EI_MAG3])
 		ujpp_utils_die("Wrong magic number", NULL);
 
+  fprintf(stderr, "type\n");
+
 	if (ET_DYN != hdr->e_type && ET_EXEC != hdr->e_type)
 		ujpp_utils_die("Isn't shared or executalbe object", NULL);
 
+  fprintf(stderr, "bitness\n");
+
 	if (ELFCLASS64 != hdr->e_ident[EI_CLASS])
 		ujpp_utils_die("Not a 64-bit object", NULL);
+
+  fprintf(stderr, "endianness\n");
 
 	if (ELFDATA2LSB != hdr->e_ident[EI_DATA])
 		ujpp_utils_die("Wrong endianness", NULL);
@@ -81,6 +89,7 @@ static size_t elf_get_strsect_offset(const char *buf, const char *sect)
 		}
 	}
 
+  fprintf(stderr, "not found:(\n");
 	return SECTION_NOT_FOUND;
 }
 
@@ -221,8 +230,10 @@ void ujpp_elf_parse_file(const char *path, struct vector *v)
 	size_t fsize;
 	const char *buf = ujpp_utils_map_file(path, &fsize);
 
-	if (NULL == buf)
+	if (NULL == buf) {
+    printf("NULL!\n");
 		return;
+  }
 
 	elf_check_file(buf);
 	ujpp_elf_parse_mem(buf, v);
@@ -240,6 +251,8 @@ size_t ujpp_elf_text_sz(const char *path)
 	size_t fsz;
 	size_t text_sz = 0;
 	const char *buf = ujpp_utils_map_file(path, &fsz);
+  fprintf(stderr, "buf: %p size: %lu\n", buf, fsz);
+
 	const Elf64_Ehdr *ehdr = (const Elf64_Ehdr *)buf;
 
 	elf_check_file(buf);

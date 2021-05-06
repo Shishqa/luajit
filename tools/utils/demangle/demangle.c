@@ -63,8 +63,7 @@ static size_t demangle_determine_vdso_size(void)
 	return 0;
 }
 
-void ujpp_demangle_load_so(struct vector *loaded_so, const char *path,
-			   uint64_t base, enum so_type type)
+void ujpp_demangle_load_so(const char *path, uint64_t base, enum so_type type)
 {
 	struct shared_obj *so;
 	struct stat st;
@@ -80,6 +79,8 @@ void ujpp_demangle_load_so(struct vector *loaded_so, const char *path,
 
 	switch (type) {
 	case SO_BIN: {
+    fprintf(stderr, "HELLO\n");
+
 		so->size = ujpp_elf_text_sz(so->path);
 
 		if (so->found)
@@ -111,9 +112,15 @@ void ujpp_demangle_load_so(struct vector *loaded_so, const char *path,
 	}
 
 	if (so->found)
+    fprintf(stderr, "found %lu!\n", so->symbols.size);
+    
 		qsort(so->symbols.elems, so->symbols.size, sizeof(void *),
 		      demangle_cmp_syms);
-	ujpp_vector_add(loaded_so, so);
+
+    for (size_t i = 0; i < so->symbols.size; ++i) {
+	    const struct sym_info *si = (const struct sym_info *)(so->symbols.elems[i]);
+      fprintf(stdout, "%s %lu\n", si->name, si->addr + base);
+    }
 }
 
 void ujpp_demangle_free_symtab(struct shared_obj *so)

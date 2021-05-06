@@ -31,7 +31,7 @@ local M = {}
 local function parse_native_callchain(reader)
   local callchain_header = reader:read_octet() 
   local callchain_size = reader:read_uleb128()
-  print('native '..callchain_header..' '..callchain_size)
+  -- print('native '..callchain_header..' '..callchain_size)
 
   while callchain_size ~= 0 do
     local addr = reader:read_uleb128()
@@ -46,7 +46,7 @@ end
 
 local function parse_lua_callchain(reader)
   local callchain_header = reader:read_octet()
-  print('lua '..callchain_header)
+  -- print('lua '..callchain_header)
   while true do
     local frame_header = reader:read_octet()
 
@@ -79,7 +79,7 @@ local function parse_event(reader, state)
   state.counters[vmstate] = state.counters[vmstate] + 1
 
   --assert(vmstate <= 10)
-  print(vmstate)
+  -- print(vmstate)
 
   if vmstate >= 1 and vmstate <= 3 then
     parse_lua_callchain(reader)

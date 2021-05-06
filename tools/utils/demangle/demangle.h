@@ -34,7 +34,7 @@ struct shared_obj {
 /* Free all mem used for symbols */
 void ujpp_demangle_free_symtab(struct shared_obj *so);
 /* Reads symbol table of given shared object */
-void ujpp_demangle_load_so(struct vector *loaded_so, const char *path,
+void ujpp_demangle_load_so(const char *path,
 			   uint64_t base, enum so_type type);
 
 #endif /* !_UJPP_DEMANGLE_H */

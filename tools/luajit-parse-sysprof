@@ -2,5 +2,7 @@
 #
 # Launcher for memprof parser.
 
-LUA_PATH="/mnt/WorkDisk/share/dev/__tarantool/luajit/tools/?.lua;;" \
-	/mnt/WorkDisk/share/dev/__tarantool/luajit/src/luajit /mnt/WorkDisk/share/dev/__tarantool/luajit/tools/sysprof.lua $@
+export LUA_PATH="/mnt/WorkDisk/share/dev/__tarantool/luajit/tools/?.lua;;"
+export LD_LIBRARY_PATH="/mnt/WorkDisk/share/dev/__tarantool/luajit/tools/utils/demangle/build"
+
+exec /mnt/WorkDisk/share/dev/__tarantool/luajit/src/luajit /mnt/WorkDisk/share/dev/__tarantool/luajit/tools/sysprof.lua $@

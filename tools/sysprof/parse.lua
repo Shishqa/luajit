@@ -31,22 +31,22 @@ local M = {}
 local function parse_native_callchain(reader)
   local callchain_header = reader:read_octet() 
   local callchain_size = reader:read_uleb128()
-  -- print('native '..callchain_header..' '..callchain_size)
+  print('native '..callchain_header..' '..callchain_size)
 
   while callchain_size ~= 0 do
     local addr = reader:read_uleb128()
-    io.write(string.format('%d', addr))
+    -- io.write(string.format('%d', addr))
     callchain_size = callchain_size - 1
     if callchain_size ~= 0 then
-      io.write(";")
+      -- io.write(";")
     end
   end
-  io.write("\n")
+  -- io.write("\n")
 end
 
 local function parse_lua_callchain(reader)
   local callchain_header = reader:read_octet()
-  -- print('lua '..callchain_header)
+  print('lua '..callchain_header)
   while true do
     local frame_header = reader:read_octet()
 
@@ -67,23 +67,34 @@ local function parse_lua_callchain(reader)
 
 end
 
-local function parse_event(reader, events)
+local function parse_event(reader, state)
   if reader:eof() then
     return false
   end
-  
-  parse_lua_callchain(reader)
-  parse_native_callchain(reader)
+
+  local vmstate = reader:read_octet()
+  if state.counters[vmstate] == nil then
+    state.counters[vmstate] = 0
+  end
+  state.counters[vmstate] = state.counters[vmstate] + 1
+
+  --assert(vmstate <= 10)
+  print(vmstate)
+
+  if vmstate >= 1 and vmstate <= 3 then
+    parse_lua_callchain(reader)
+    parse_native_callchain(reader)
+  elseif vmstate == 9 then
+    parse_native_callchain(reader)
+  end
 
   return true
 end
 
 function M.parse(reader)
-  local events = {
-    alloc = {},
-    realloc = {},
-    free = {},
-    heap = {},
+  local state = {
+    events = {},
+    counters = {}
   }
 
   local magic = reader:read_octets(3)
@@ -103,11 +114,16 @@ function M.parse(reader)
     ))
   end
 
-  while parse_event(reader, events) do
+  while parse_event(reader, state) do
     -- Empty body.
   end
 
-  return events
+  print('states:')
+  for k, v in pairs(state.counters) do
+    print(k..' '..v)
+  end
+
+  return state
 end
 
 return M

@@ -2,5 +2,5 @@
 #
 # Launcher for memprof parser.
 
-LUA_PATH="/home/shishqa/dev/__tarantool/luajit/tools/?.lua;;" \
-	/home/shishqa/dev/__tarantool/luajit/src/luajit /home/shishqa/dev/__tarantool/luajit/tools/sysprof.lua $@
+LUA_PATH="/mnt/WorkDisk/share/dev/__tarantool/luajit/tools/?.lua;;" \
+	/mnt/WorkDisk/share/dev/__tarantool/luajit/src/luajit /mnt/WorkDisk/share/dev/__tarantool/luajit/tools/sysprof.lua $@

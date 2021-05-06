@@ -8,8 +8,8 @@
 #include <string.h>
 #include <assert.h>
 
-#include "ujpp_demangle.h"
-#include "ujpp_utils.h"
+#include "demangle.h"
+#include "utils.h"
 
 #define TRUNCATE_LEN 90
 #define SECTION_NOT_FOUND (size_t)(-1)

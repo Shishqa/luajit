@@ -12,7 +12,30 @@ local SO_SHARED = 0
 
 local ffi = require "ffi"
 ffi.cdef[[
-void demangle(const char* path, uint64_t base);
+struct sym_info {
+	uint64_t addr; /* Raw offset to symbol */
+	uint64_t size; /* Physical size in the SO*/
+	const char *name; /* Symbol */
+};
+
+struct vector {
+	struct sym_info **elems;
+	uint32_t size;
+	uint32_t capacity;
+};
+
+struct shared_obj {
+	const char *path; /* Full path to object */
+	const char *short_name; /* Basename */
+	uint64_t base; /* VA */
+	uint64_t size; /* Size from stat() function */
+	struct vector symbols; /* Symbols from nm */
+	uint8_t found;
+};
+
+void ujpp_demangle_free_symtab(struct shared_obj *so);
+struct shared_obj* load_so(const char* path, uint64_t base);
+void free(void* ptr);
 ]]
 
 local demangle = ffi.load("demangle")
@@ -25,12 +48,18 @@ local function parse_sym_lfunc(reader, symtab)
   local so_path = reader:read_string()
 
   print("so: "..so_path.." "..string.format('%d', so_addr))
-  demangle.demangle(so_path, so_addr)  
-    
-  symtab[so_addr] = {
-    path = so_path,
-    symbols = {}
-  }
+  local so = demangle.load_so(so_path, so_addr)  
+  print(so[0].symbols.size)
+
+  for i=0,so[0].symbols.size-1 do
+    local addr = tonumber(so[0].symbols.elems[i][0].addr + so[0].base)
+    local name = ffi.string(so[0].symbols.elems[i][0].name)
+    local size = tonumber(so[0].symbols.elems[i][0].size)
+    symtab[addr] = { name = name, size = size }
+  end
+
+  demangle.ujpp_demangle_free_symtab(so)
+  ffi.C.free(so)
 end
 
 local parsers = {
@@ -76,18 +105,14 @@ function M.parse(reader)
   return symtab
 end
 
-function M.demangle(symtab, loc)
-  local addr = loc.addr
-
-  if addr == 0 then
-    return "INTERNAL"
+function M.demangle(symtab, addr)
+  -- TODO: binary search + cache
+  for k, v in pairs(symtab) do
+    if k <= addr and addr <= k + v.size then
+      return v.name
+    end
   end
-
-  if symtab[addr] then
-    return string_format("%s:%d", symtab[addr].source, loc.line)
-  end
-
-  return string_format("CFUNC %#x", addr)
+  return string_format("[%#x]", addr)
 end
 
 return M

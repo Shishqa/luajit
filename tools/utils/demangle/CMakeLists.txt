@@ -5,7 +5,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS true)
 project(demangle)
 
 add_library(demangle SHARED
-  main.c
   demangle.h
   demangle.c
   elf.h

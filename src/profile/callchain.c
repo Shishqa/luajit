@@ -71,12 +71,12 @@ void dump_callchain_lua(struct profiler_state *ps)
       goto next;  /* Skip dummy frames. See lj_err_optype_call(). */
     }
 
-    break;
-
-    fprintf(stderr, "new frame %p nextframe %p bot %p\n", frame, nextframe, bot);
+    // fprintf(stderr, "new frame %p nextframe %p bot %p\n", frame, nextframe, bot);
 
     GCfunc *fn = frame_func(frame);
     if (!fn) {
+      lj_wbuf_addbyte(buf, CFUNC);
+      lj_wbuf_addu64(buf, (uintptr_t)(0xBADBEEF));   
       break;
     }
 
@@ -87,11 +87,7 @@ void dump_callchain_lua(struct profiler_state *ps)
     } else {
       dump_cfunc(buf, fn); 
     }
-    fprintf(stderr, "frame end\n");
-
-    if (++level == 1) {
-      break;
-    }
+    // fprintf(stderr, "frame end\n");
 
 next:
     nextframe = frame;
@@ -107,16 +103,22 @@ next:
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
+enum {
+  PROFILER_STACK_DEPTH = 5
+};
+
 void dump_callchain_native(struct profiler_state *ps) {
   struct lj_wbuf* buf = &ps->buf;
 
   const int depth =
       backtrace(ps->backtrace_buf, 4000);
 
-  lj_wbuf_addbyte(buf, CALLCHAIN_NATIVE);
-  lj_wbuf_addu64(buf, (uint64_t)depth);
+  lua_assert(depth >= 5);
 
-  for (int i = depth - 1; i >= 0; --i) {
+  lj_wbuf_addbyte(buf, CALLCHAIN_NATIVE);
+  lj_wbuf_addu64(buf, (uint64_t)(depth - PROFILER_STACK_DEPTH));
+
+  for (int i = depth - 1; i >= PROFILER_STACK_DEPTH; --i) {
     lj_wbuf_addu64(buf, (uintptr_t)ps->backtrace_buf[i]);
   }
 }

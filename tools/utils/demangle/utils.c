@@ -17,17 +17,7 @@
 
 #include <errno.h>
 
-static enum so_type utils_obj_type(const char *path)
-{
-	int is_vdso = strcmp(path, "vdso") == 0;
 
-	if (strstr(path, ".so") != NULL)
-		return SO_SHARED;
-	else if (is_vdso)
-		return SO_VDSO;
-	else
-		return SO_BIN;
-}
 
 void ujpp_utils_die_nofunc(const char *fmt, ...)
 {
@@ -59,43 +49,34 @@ char *ujpp_utils_map_file(const char *path, size_t *fsize)
 	void *buf;
 	struct stat st;
 
-  fprintf(stderr, "MAP\n");
-
 	fd = open(path, O_RDONLY);
 
 	if (-1 == fd) {
-    fprintf(stderr, "%d \n\n", errno);
-    fprintf(stderr, "\n\n");
 		return NULL;
   }
 
 	if (-1 == fstat(fd, &st)) {
-    fprintf(stderr, "bad fstat\n");
 		goto err_exit;
   }
 
 	sz = st.st_size;
 
 	if (0 == sz) {
-    fprintf(stderr, "zero size\n");
 		goto err_exit;
   }
 
 	buf = mmap(0, sz, PROT_READ, MAP_SHARED, fd, 0);
 
 	if (MAP_FAILED == buf) {
-    fprintf(stderr, "map failed\n");
 		goto err_exit;
   }
 
 	close(fd); /* Igore errors. */
 	*fsize = sz;
 
-  fprintf(stderr, "BUF!\n");
 	return (char *)buf;
 err_exit:
 
-  fprintf(stderr, "error???\n");
 	close(fd); /* Igore errors. */
 	return NULL;
 }

@@ -4,6 +4,7 @@
 -- Copyright (C) 2015-2019 IPONWEB Ltd.
 
 local symtab = require "utils.symtab"
+local sotab = require "utils.sotab"
 
 local M = {}
 
@@ -40,6 +41,11 @@ function M.render(events, symbols)
       print("")
     end
   end
+end
+
+function M.dump_flamegraph(outfile, events, lua_symbols, host_symbols)
+
+
 end
 
 return M

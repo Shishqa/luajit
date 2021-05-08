@@ -110,6 +110,8 @@ void lj_sysprof_stop(lua_State *L) {
 
     // print_counters(ps);
 
+    lj_wbuf_addbyte(&ps->buf, 0xBB);
+
     lj_wbuf_flush(&ps->buf);
     lj_wbuf_terminate(&ps->buf);
 

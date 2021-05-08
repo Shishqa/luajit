@@ -19,6 +19,18 @@ enum {
   MAPS_LINE_LEN = 256
 };
 
+static enum so_type utils_obj_type(const char *path)
+{
+	int is_vdso = strcmp(path, "vdso") == 0;
+
+	if (strstr(path, ".so") != NULL)
+		return SO_SHARED;
+	else if (is_vdso)
+		return SO_VDSO;
+	else
+		return SO_BIN;
+}
+
 static int demangle_cmp_syms(const void *sym_first, const void *sym_second)
 {
 	const struct sym_info *si1 = *(const struct sym_info **)sym_first;
@@ -63,11 +75,13 @@ static size_t demangle_determine_vdso_size(void)
 	return 0;
 }
 
-void ujpp_demangle_load_so(const char *path, uint64_t base, enum so_type type)
+struct shared_obj* load_so(const char *path, uint64_t base)
 {
 	struct shared_obj *so;
 	struct stat st;
 	int found = stat(path, &st) != -1;
+
+  enum so_type type = utils_obj_type(path);
 
 	so = ujpp_utils_allocz(sizeof(*so));
 	ujpp_vector_init(&so->symbols);
@@ -79,8 +93,6 @@ void ujpp_demangle_load_so(const char *path, uint64_t base, enum so_type type)
 
 	switch (type) {
 	case SO_BIN: {
-    fprintf(stderr, "HELLO\n");
-
 		so->size = ujpp_elf_text_sz(so->path);
 
 		if (so->found)
@@ -111,16 +123,13 @@ void ujpp_demangle_load_so(const char *path, uint64_t base, enum so_type type)
 		ujpp_utils_die("Wrong object type %u", type);
 	}
 
-	if (so->found)
+	if (so->found) {
     fprintf(stderr, "found %lu!\n", so->symbols.size);
-    
-		qsort(so->symbols.elems, so->symbols.size, sizeof(void *),
-		      demangle_cmp_syms);
-
-    for (size_t i = 0; i < so->symbols.size; ++i) {
-	    const struct sym_info *si = (const struct sym_info *)(so->symbols.elems[i]);
-      fprintf(stdout, "%s %lu\n", si->name, si->addr + base);
-    }
+  } else {
+    fprintf(stderr, "not found\n");
+  }
+  
+  return so;
 }
 
 void ujpp_demangle_free_symtab(struct shared_obj *so)

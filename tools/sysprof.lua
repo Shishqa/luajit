@@ -3,6 +3,7 @@ local sysprof = require "sysprof.parse"
 local symtab = require "utils.symtab"
 local sotab = require "utils.sotab"
 local view = require "memprof.humanize"
+local misc = require "sysprof.collapse"
 
 local stdout, stderr = io.stdout, io.stderr
 local match, gmatch = string.match, string.gmatch
@@ -81,10 +82,13 @@ end
 
 local function dump(inputfile)
   local reader = bufread.new(inputfile)
-  local symbols = symtab.parse(reader)
-  local so = sotab.parse(reader)
 
-  sysprof.parse(reader)
+  local lua_symbols = symtab.parse(reader)
+  local host_symbols = sotab.parse(reader)
+
+  local events = sysprof.parse(reader)
+
+  misc.collapse(events, host_symbols, lua_symbols)
 
   --[[ local events = memprof.parse(reader, symbols)
 
@@ -107,7 +111,7 @@ end
 
 -- FIXME: this script should be application-independent.
 local args = {...}
-if #args == 1 and args[1] == "memprof" then
+if #args == 1 and args[1] == "sysprof" then
   return dump
 else
   dump(parseargs(args))

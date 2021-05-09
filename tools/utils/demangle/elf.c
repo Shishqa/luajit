@@ -241,8 +241,6 @@ size_t ujpp_elf_text_sz(const char *path)
 	size_t fsz;
 	size_t text_sz = 0;
 	const char *buf = ujpp_utils_map_file(path, &fsz);
-  fprintf(stderr, "buf: %p size: %lu\n", buf, fsz);
-
 	const Elf64_Ehdr *ehdr = (const Elf64_Ehdr *)buf;
 
 	elf_check_file(buf);

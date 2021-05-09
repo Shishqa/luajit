@@ -47,9 +47,9 @@ local function parse_sym_lfunc(reader, symtab)
   local so_addr = reader:read_uleb128()
   local so_path = reader:read_string()
 
-  print("so: "..so_path.." "..string.format('%d', so_addr))
-  local so = demangle.load_so(so_path, so_addr)  
-  print(so[0].symbols.size)
+  -- print("so: "..so_path.." "..string.format('%d', so_addr))
+  local so = demangle.load_so(so_path, so_addr)
+  -- print(so[0].symbols.size)
 
   for i=0,so[0].symbols.size-1 do
     local addr = tonumber(so[0].symbols.elems[i][0].addr + so[0].base)

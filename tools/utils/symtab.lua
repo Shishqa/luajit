@@ -24,8 +24,6 @@ local function parse_sym_lfunc(reader, symtab)
   local sym_chunk = reader:read_string()
   local sym_line = reader:read_uleb128()
 
-  print("func "..sym_chunk.." "..sym_addr)
-
   symtab[sym_addr] = {
     source = sym_chunk,
     linedefined = sym_line,

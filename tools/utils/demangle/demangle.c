@@ -122,13 +122,7 @@ struct shared_obj* load_so(const char *path, uint64_t base)
 	default:
 		ujpp_utils_die("Wrong object type %u", type);
 	}
-
-	if (so->found) {
-    fprintf(stderr, "found %lu!\n", so->symbols.size);
-  } else {
-    fprintf(stderr, "not found\n");
-  }
-  
+ 
   return so;
 }
 

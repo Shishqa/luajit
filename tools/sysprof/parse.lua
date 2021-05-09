@@ -49,11 +49,11 @@ end
 
 local function parse_lfunc(reader, event)
   local addr = reader:read_uleb128()
-  -- TODO: line
+  local line = reader:read_uleb128()
   table.insert(event.lua.callchain, {
     type = FRAME.LFUNC,
     addr = addr,
-    line = 42 -- TODO
+    line = line
   })
 end
 
@@ -61,7 +61,6 @@ local function parse_ffunc(reader, event)
   local ffid = reader:read_uleb128()
   table.insert(event.lua.callchain, {
     type = FRAME.FFUNC,
-    addr = 0,
     ffid = ffid,
   })
 end
@@ -121,20 +120,16 @@ local function parse_lua_host(reader, event)
   parse_host_callchain(reader, event)
 end
 
-local function parse_stub(reader, event)
-  -- pass
-end
-
 local event_parsers = {
-  [VMST.INTERP] = parse_stub,
+  [VMST.INTERP] = parse_host_only,
   [VMST.LFUNC]  = parse_lua_host,
   [VMST.FFUNC]  = parse_lua_host,
   [VMST.CFUNC]  = parse_lua_host,
-  [VMST.GC]     = parse_stub,
-  [VMST.EXIT]   = parse_stub,
-  [VMST.RECORD] = parse_stub,
-  [VMST.OPT]    = parse_stub,
-  [VMST.ASM]    = parse_stub,
+  [VMST.GC]     = parse_host_only,
+  [VMST.EXIT]   = parse_host_only,
+  [VMST.RECORD] = parse_host_only,
+  [VMST.OPT]    = parse_host_only,
+  [VMST.ASM]    = parse_host_only,
   [VMST.TRACE]  = parse_host_only
 }
 
@@ -151,9 +146,7 @@ local function parse_event(reader, events)
 
   event_parsers[vmstate](reader, event)
 
-  if #event.lua.callchain ~= 0 or #event.host.callchain ~= 0 then
-    table.insert(events, event)
-  end
+  table.insert(events, event)
   return true
 end
 

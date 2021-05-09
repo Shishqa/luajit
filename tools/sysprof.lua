@@ -80,6 +80,18 @@ local function parseargs(args)
   return args[args.argn]
 end
 
+local function traverse_calltree(node, prefix)
+  if node.is_leaf then
+    print(prefix..' '..node.count)
+  end
+
+  local sep_prefix = #prefix == 0 and prefix or prefix..';'
+
+  for name,child in pairs(node.children) do
+    traverse_calltree(child, sep_prefix..name)
+  end
+end
+
 local function dump(inputfile)
   local reader = bufread.new(inputfile)
 
@@ -87,24 +99,9 @@ local function dump(inputfile)
   local host_symbols = sotab.parse(reader)
 
   local events = sysprof.parse(reader)
+  local calltree = misc.collapse(events, host_symbols, lua_symbols, true)
 
-  misc.collapse(events, host_symbols, lua_symbols)
-
-  --[[ local events = memprof.parse(reader, symbols)
-
-  stdout:write("ALLOCATIONS", "\n")
-  view.render(events.alloc, symbols)
-  stdout:write("\n")
-
-  stdout:write("REALLOCATIONS", "\n")
-  view.render(events.realloc, symbols)
-  stdout:write("\n")
-
-  stdout:write("DEALLOCATIONS", "\n")
-  view.render(events.free, symbols)
-  stdout:write("\n")
-
-  --]]
+  traverse_calltree(calltree, '')
 
   os.exit(0)
 end

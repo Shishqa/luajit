@@ -184,6 +184,12 @@ if(LUAJIT_DISABLE_MEMPROF)
   AppendFlags(TARGET_C_FLAGS -DLUAJIT_DISABLE_MEMPROF)
 endif()
 
+# Disable sys profiler.
+option(LUAJIT_DISABLE_SYSPROF "LuaJIT sys profiler support" OFF)
+if(LUAJIT_DISABLE_SYSPROF)
+  AppendFlags(TARGET_C_FLAGS -DLUAJIT_DISABLE_SYSPROF)
+endif()
+
 # Switch to harder (and slower) hash function when a collision
 # chain in the string hash table exceeds a certain length.
 option(LUAJIT_SMART_STRINGS "Harder string hashing function" ON)

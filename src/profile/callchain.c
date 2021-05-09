@@ -51,8 +51,6 @@ void dump_callchain_lua(struct profiler_state *ps) {
   lua_State *L = gco2th(gcref(ps->g->cur_L));
   assert(L != NULL);
 
-  // cTValue *frame, *bot = tvref(L->stack) + LJ_FR2;
-
   TValue *frame = L->base - 1;
   void *cf = L->cframe;
   while (frame > tvref(L->stack) + LJ_FR2) {
@@ -80,32 +78,25 @@ void dump_callchain_lua(struct profiler_state *ps) {
       }
       break;
     case FRAME_C: /* C frame. */
-      //fprintf(stderr, "C\n");
     unwind_c:
       cf = cframe_prev(cf);
       frame = frame_prevd(frame);
       break;
     case FRAME_CP:               /* Protected C frame. */
-      //fprintf(stderr, "CP\n");
       goto end;
     case FRAME_CONT: /* Continuation frame. */
-      //fprintf(stderr, "CONT\n");
       if (frame_iscont_fficb(frame))
         goto unwind_c;
     case FRAME_VARG: /* Vararg frame. */
-      //fprintf(stderr, "VARG\n");
       frame = frame_prevd(frame);
       break;
     case FRAME_PCALL:  /* FF pcall() frame. */
     case FRAME_PCALLH: /* FF pcall() frame inside hook. */
-      //fprintf(stderr, "PCALL\n");
-      break; // FIXME: check yield?
+      goto end;
     }
   }
 
 end:
-  //fprintf(stderr, "|||\n");
-
   lj_wbuf_addbyte(buf, BOT_FRAME);
   return;
 

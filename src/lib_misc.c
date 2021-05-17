@@ -8,34 +8,31 @@
 #define lib_misc_c
 #define LUA_LIB
 
-#include <stdio.h>
 #include <errno.h>
+#include <stdio.h>
 
-#include "lua.h"
-#include "lmisclib.h"
 #include "lauxlib.h"
-
+#include "lj_err.h"
+#include "lj_gc.h"
+#include "lj_lib.h"
+#include "lj_memprof.h"
 #include "lj_obj.h"
 #include "lj_str.h"
+#include "lj_sysprof.h"
 #include "lj_tab.h"
-#include "lj_lib.h"
-#include "lj_gc.h"
-#include "lj_err.h"
-
-#include "lj_memprof.h"
+#include "lmisclib.h"
+#include "lua.h"
 
 /* ------------------------------------------------------------------------ */
 
 static LJ_AINLINE void setnumfield(struct lua_State *L, GCtab *t,
-				   const char *name, int64_t val)
-{
+                                   const char *name, int64_t val) {
   setnumV(lj_tab_setstr(L, t, lj_str_newz(L, name)), (double)val);
 }
 
 #define LJLIB_MODULE_misc
 
-LJLIB_CF(misc_getmetrics)
-{
+LJLIB_CF(misc_getmetrics) {
   struct luam_Metrics metrics;
   GCtab *m;
 
@@ -75,6 +72,91 @@ LJLIB_CF(misc_getmetrics)
 
 #include "lj_libdef.h"
 
+/* ----- misc.sysprof module ---------------------------------------------- */
+// Not loaded by default, use: local profile = require("misc.sysprof")
+#define LJLIB_MODULE_misc_sysprof
+
+static const char KEY_PROFILE_THREAD = 't';
+static const char KEY_PROFILE_FUNC = 'f';
+
+const struct lj_sysprof_options parse_options(char *opts_str) {
+  struct lj_sysprof_options opts = {10, PROFILE_DEFAULT, "sysprof.bin"};
+
+  if (!opts_str) {
+    return opts;
+  }
+
+  char *filename = strtok(opts_str, ";");
+  if (filename != NULL) {
+    opts.path = filename;
+  }
+
+  const char *interval_str = strtok(NULL, ";");
+  if (interval_str != NULL) {
+    opts.interval = strtol(interval_str, NULL, 10);
+  }
+
+  const char *mode_str = strtok(NULL, ";");
+  switch (*mode_str) {
+    case 'D': {
+      opts.mode = PROFILE_DEFAULT;
+      break;
+    }
+
+    case 'L': {
+      opts.mode = PROFILE_LEAF;
+      break;
+    }
+
+    case 'C': {
+      opts.mode = PROFILE_CALLGRAPH;
+      break;
+    }
+  }
+
+  return opts;
+}
+
+// sysprof.start(options)
+LJLIB_CF(misc_sysprof_start) {
+  GCtab *registry = tabV(registry(L));
+  GCstr *options = lj_lib_optstr(L, 1);
+  TValue key;
+  // Anchor thread and function in registry.
+  setlightudV(&key, (void *)&KEY_PROFILE_THREAD);
+  setlightudV(&key, (void *)&KEY_PROFILE_FUNC);
+  lj_gc_anybarriert(L, registry);
+
+  struct lj_sysprof_options opts = {};
+  const char *option_string = strdata(options);
+  char option_string_copy[2 * PATH_MAX] = "";
+  if (option_string != NULL) {
+    strcpy(option_string_copy, option_string);  // TODO get rid of copying
+    opts = parse_options(option_string_copy);
+  } else {
+    opts = parse_options(NULL);
+  }
+
+  lj_sysprof_start(L, &opts);
+  return 0;
+}
+
+// profile.sysprof_stop()
+LJLIB_CF(misc_sysprof_stop) {
+  GCtab *registry;
+  TValue key;
+  lj_sysprof_stop(L);
+  registry = tabV(registry(L));
+  setlightudV(&key, (void *)&KEY_PROFILE_THREAD);
+  setnilV(lj_tab_set(L, registry, &key));
+  setlightudV(&key, (void *)&KEY_PROFILE_FUNC);
+  setnilV(lj_tab_set(L, registry, &key));
+  lj_gc_anybarriert(L, registry);
+  return 0;
+}
+
+/* ------------------------------------------------------------------------ */
+
 /* ----- misc.memprof module ---------------------------------------------- */
 
 #define LJLIB_MODULE_misc_memprof
@@ -99,11 +181,10 @@ struct memprof_ctx {
 ** Just call fwrite to the corresponding FILE.
 */
 static size_t buffer_writer_default(const void **buf_addr, size_t len,
-				    void *opt)
-{
+                                    void *opt) {
   struct memprof_ctx *ctx = opt;
   FILE *stream = ctx->stream;
-  const void * const buf_start = *buf_addr;
+  const void *const buf_start = *buf_addr;
   const void *data = *buf_addr;
   size_t write_total = 0;
 
@@ -115,9 +196,9 @@ static size_t buffer_writer_default(const void **buf_addr, size_t len,
     if (LJ_UNLIKELY(written == 0)) {
       /* Re-tries write in case of EINTR. */
       if (errno != EINTR) {
-	/* Will be freed as whole chunk later. */
-	*buf_addr = NULL;
-	return write_total;
+        /* Will be freed as whole chunk later. */
+        *buf_addr = NULL;
+        return write_total;
       }
 
       errno = 0;
@@ -127,8 +208,7 @@ static size_t buffer_writer_default(const void **buf_addr, size_t len,
     write_total += written;
     lua_assert(write_total <= len);
 
-    if (write_total == len)
-      break;
+    if (write_total == len) break;
 
     data = (uint8_t *)data + (ptrdiff_t)written;
   }
@@ -138,8 +218,7 @@ static size_t buffer_writer_default(const void **buf_addr, size_t len,
 }
 
 /* Default on stop callback. Just close the corresponding stream. */
-static int on_stop_cb_default(void *opt, uint8_t *buf)
-{
+static int on_stop_cb_default(void *opt, uint8_t *buf) {
   struct memprof_ctx *ctx = opt;
   FILE *stream = ctx->stream;
   UNUSED(buf);
@@ -148,8 +227,7 @@ static int on_stop_cb_default(void *opt, uint8_t *buf)
 }
 
 /* local started, err, errno = misc.memprof.start(fname) */
-LJLIB_CF(misc_memprof_start)
-{
+LJLIB_CF(misc_memprof_start) {
   struct lj_memprof_options opt = {0};
   const char *fname = strdata(lj_lib_checkstr(L, 1));
   struct memprof_ctx *ctx;
@@ -178,23 +256,23 @@ LJLIB_CF(misc_memprof_start)
 
   if (LJ_UNLIKELY(memprof_status != PROFILE_SUCCESS)) {
     switch (memprof_status) {
-    case PROFILE_ERRUSE:
-      lua_pushnil(L);
-      lua_pushstring(L, err2msg(LJ_ERR_PROF_MISUSE));
-      lua_pushinteger(L, EINVAL);
-      return 3;
+      case PROFILE_ERRUSE:
+        lua_pushnil(L);
+        lua_pushstring(L, err2msg(LJ_ERR_PROF_MISUSE));
+        lua_pushinteger(L, EINVAL);
+        return 3;
 #if LJ_HASMEMPROF
-    case PROFILE_ERRRUN:
-      lua_pushnil(L);
-      lua_pushstring(L, err2msg(LJ_ERR_PROF_ISRUNNING));
-      lua_pushinteger(L, EINVAL);
-      return 3;
-    case PROFILE_ERRIO:
-      return luaL_fileresult(L, 0, fname);
+      case PROFILE_ERRRUN:
+        lua_pushnil(L);
+        lua_pushstring(L, err2msg(LJ_ERR_PROF_ISRUNNING));
+        lua_pushinteger(L, EINVAL);
+        return 3;
+      case PROFILE_ERRIO:
+        return luaL_fileresult(L, 0, fname);
 #endif
-    default:
-      lua_assert(0);
-      return 0;
+      default:
+        lua_assert(0);
+        return 0;
     }
   }
   lua_pushboolean(L, 1);
@@ -202,28 +280,27 @@ LJLIB_CF(misc_memprof_start)
 }
 
 /* local stopped, err, errno = misc.memprof.stop() */
-LJLIB_CF(misc_memprof_stop)
-{
+LJLIB_CF(misc_memprof_stop) {
   int status = lj_memprof_stop(L);
   if (status != PROFILE_SUCCESS) {
     switch (status) {
-    case PROFILE_ERRUSE:
-      lua_pushnil(L);
-      lua_pushstring(L, err2msg(LJ_ERR_PROF_MISUSE));
-      lua_pushinteger(L, EINVAL);
-      return 3;
+      case PROFILE_ERRUSE:
+        lua_pushnil(L);
+        lua_pushstring(L, err2msg(LJ_ERR_PROF_MISUSE));
+        lua_pushinteger(L, EINVAL);
+        return 3;
 #if LJ_HASMEMPROF
-    case PROFILE_ERRRUN:
-      lua_pushnil(L);
-      lua_pushstring(L, err2msg(LJ_ERR_PROF_NOTRUNNING));
-      lua_pushinteger(L, EINVAL);
-      return 3;
-    case PROFILE_ERRIO:
-      return luaL_fileresult(L, 0, NULL);
+      case PROFILE_ERRRUN:
+        lua_pushnil(L);
+        lua_pushstring(L, err2msg(LJ_ERR_PROF_NOTRUNNING));
+        lua_pushinteger(L, EINVAL);
+        return 3;
+      case PROFILE_ERRIO:
+        return luaL_fileresult(L, 0, NULL);
 #endif
-    default:
-      lua_assert(0);
-      return 0;
+      default:
+        lua_assert(0);
+        return 0;
     }
   }
   lua_pushboolean(L, 1);
@@ -234,9 +311,9 @@ LJLIB_CF(misc_memprof_stop)
 
 /* ------------------------------------------------------------------------ */
 
-LUALIB_API int luaopen_misc(struct lua_State *L)
-{
+LUALIB_API int luaopen_misc(struct lua_State *L) {
   LJ_LIB_REG(L, LUAM_MISCLIBNAME, misc);
   LJ_LIB_REG(L, LUAM_MISCLIBNAME ".memprof", misc_memprof);
+  LJ_LIB_REG(L, LUAM_MISCLIBNAME ".sysprof", misc_sysprof);
   return 1;
 }

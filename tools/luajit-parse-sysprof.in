@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# Launcher for sysprof parser.
+
+export LUA_PATH="@LUAJIT_TOOLS_DIR@/?.lua;;"
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:@LUAJIT_TOOLS_DIR@/utils" 
+
+@LUAJIT_TOOLS_BIN@ @LUAJIT_TOOLS_DIR@/sysprof.lua $@

@@ -11,6 +11,8 @@
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 project(LuaJIT C)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS yes)
+
 # XXX: Originally CMake machinery is introduced to make LuaJIT
 # testing self-sufficient. Since there are only few systems
 # covered by the tests in our CI, there is no need to support
@@ -182,6 +184,12 @@ endif()
 option(LUAJIT_DISABLE_MEMPROF "LuaJIT memory profiler support" OFF)
 if(LUAJIT_DISABLE_MEMPROF)
   AppendFlags(TARGET_C_FLAGS -DLUAJIT_DISABLE_MEMPROF)
+endif()
+
+# Disable memory profiler.
+option(LUAJIT_DISABLE_SYSPROF "LuaJIT system profiler support" OFF)
+if(LUAJIT_DISABLE_SYSPROF)
+  AppendFlags(TARGET_C_FLAGS -DLUAJIT_DISABLE_SYSPROF)
 endif()
 
 # Switch to harder (and slower) hash function when a collision

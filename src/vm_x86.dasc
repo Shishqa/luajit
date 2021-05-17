@@ -443,6 +443,35 @@
 |  mov dword [DISPATCH+DISPATCH_GL(vmstate)], ~LJ_VMST_..st
 |.endmacro
 |
+|// Stash interpreter's internal base and enter LFUNC VM state.
+|// PROFILER: Each time profiler sees LFUNC state, it will inspect [BASE-1]
+|// expecting to see a valid framelink there. So enter this state only when
+|// BASE is stable and slots are not moved on the stack.
+|.macro set_vmstate_lfunc
+|  set_vmstate INTERP // Guard for non-atomic VM context restoration
+|  mov dword [DISPATCH+DISPATCH_GL(top_frame.guesttop)], BASE
+|  set_vmstate LFUNC
+|.endmacro
+|
+|// Stash ID of the fast function about to be executed and enter FFUNC VM state.
+|// PROFILER: Each time profiler sees FFUNC state, it will write ffid
+|// to the profile stream.
+|.macro set_vmstate_ffunc
+|  set_vmstate INTERP // Guard for non-atomic VM context restoration
+|  mov XCHGd, dword [BASE-8]
+|  mov dword [DISPATCH+DISPATCH_GL(top_frame.ffid)], XCHGd
+|  set_vmstate FFUNC
+|.endmacro
+|
+|// Stash address of the C function about to be executed and enter CFUNC VM state.
+|// PROFILER: Each time profiler sees CFUNC state, it will write this address
+|// to the profile stream.
+|.macro set_vmstate_cfunc
+|  set_vmstate INTERP // Guard for non-atomic VM context restoration
+|  mov dword [DISPATCH+DISPATCH_GL(top_frame.guesttop)], BASE
+|  set_vmstate CFUNC
+|.endmacro
+|
 |// Uses spilled ecx on x86 or XCHGd (r11d) on x64.
 |.macro save_vmstate
 |.if not WIN
@@ -560,7 +589,7 @@ static void build_subroutines(BuildCtx *ctx)
   |  jnz ->vm_returnp
   |
   |  // Return to C.
-  |  set_vmstate CFUNC
+  |  set_vmstate_cfunc
   |  and PC, -8
   |  sub PC, BASE
   |  neg PC				// Previous base = BASE - delta.
@@ -934,7 +963,7 @@ static void build_subroutines(BuildCtx *ctx)
   |  mov KBASE, LFUNC:KBASE->pc
   |  mov KBASE, [KBASE+PC2PROTO(k)]
   |  // BASE = base, RC = result, RB = meta base
-  |  set_vmstate LFUNC			// LFUNC after KBASE restoration.
+  |  set_vmstate_lfunc			// LFUNC after KBASE restoration.
   |  jmp RAa				// Jump to continuation.
   |
   |.if FFI
@@ -1459,7 +1488,7 @@ static void build_subroutines(BuildCtx *ctx)
   |
   |.macro .ffunc, name
   |->ff_ .. name:
-  |  set_vmstate FFUNC
+  |  set_vmstate_ffunc
   |.endmacro
   |
   |.macro .ffunc_1, name
@@ -2141,7 +2170,7 @@ static void build_subroutines(BuildCtx *ctx)
   |  movzx RA, PC_RA
   |  not RAa				// Note: ~RA = -(RA+1)
   |  lea BASE, [BASE+RA*8]		// base = base - (RA+1)*8
-  |  set_vmstate LFUNC			// LFUNC state after BASE restoration.
+  |  set_vmstate_lfunc			// LFUNC state after BASE restoration.
   |  ins_next
   |
   |6:  // Fill up results with nil.
@@ -2986,7 +3015,7 @@ static void build_subroutines(BuildCtx *ctx)
   |  mov KBASE, [KBASE+PC2PROTO(k)]
   |  mov L:RB->base, BASE
   |  mov dword [DISPATCH+DISPATCH_GL(jit_base)], 0
-  |  set_vmstate LFUNC			// LFUNC after BASE & KBASE restoration.
+  |  set_vmstate_lfunc			// LFUNC after BASE & KBASE restoration.
   |  // Modified copy of ins_next which handles function header dispatch, too.
   |  mov RC, [PC]
   |  movzx RA, RCH
@@ -3257,7 +3286,7 @@ static void build_subroutines(BuildCtx *ctx)
   |  call extern lj_ccallback_enter@8	// (CTState *cts, void *cf)
   |  // lua_State * returned in eax (RD).
   |  mov BASE, L:RD->base
-  |  set_vmstate LFUNC			// LFUNC after BASE restoration.
+  |  set_vmstate_lfunc			// LFUNC after BASE restoration.
   |  mov RD, L:RD->top
   |  sub RD, BASE
   |  mov LFUNC:RB, [BASE-8]
@@ -5103,7 +5132,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     |  mov KBASE, LFUNC:KBASE->pc
     |  mov KBASE, [KBASE+PC2PROTO(k)]
     |  // LFUNC after the old BASE & KBASE is restored.
-    |  set_vmstate LFUNC
+    |  set_vmstate_lfunc
     |  ins_next
     |
     |6:  // Fill up results with nil.
@@ -5391,7 +5420,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     |  ins_AD  // BASE = new base, RA = framesize, RD = nargs+1
     |  mov KBASE, [PC-4+PC2PROTO(k)]
     |  mov L:RB, SAVE_L
-    |  set_vmstate LFUNC		// LFUNC after KBASE restoration.
+    |  set_vmstate_lfunc		// LFUNC after KBASE restoration.
     |  lea RA, [BASE+RA*8]		// Top of frame.
     |  cmp RA, L:RB->maxstack
     |  ja ->vm_growstack_f
@@ -5429,7 +5458,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     |  mov [RD-4], RB			// Store delta + FRAME_VARG.
     |  mov [RD-8], LFUNC:KBASE		// Store copy of LFUNC.
     |  mov L:RB, SAVE_L
-    |  set_vmstate LFUNC		// LFUNC after KBASE restoration.
+    |  set_vmstate_lfunc		// LFUNC after KBASE restoration.
     |  lea RA, [RD+RA*8]
     |  cmp RA, L:RB->maxstack
     |  ja ->vm_growstack_v		// Need to grow stack.
@@ -5494,7 +5523,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
       |.endif
     }
     |  ja ->vm_growstack_c		// Need to grow stack.
-    |  set_vmstate CFUNC		// CFUNC before entering C function.
+    |  set_vmstate_cfunc		// CFUNC before entering C function.
     if (op == BC_FUNCC) {
       |  call KBASEa			// (lua_State *L)
     } else {

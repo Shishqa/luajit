@@ -160,6 +160,7 @@ typedef struct SBuf {
   MRef L;		/* lua_State, used for buffer resizing. */
 } SBuf;
 
+
 /* -- Tags and values ----------------------------------------------------- */
 
 /* Frame link. */
@@ -507,6 +508,17 @@ typedef struct GCtab {
 #define setfreetop(t, n, v)	(setmref((n)->freetop, (v)))
 #endif
 
+/* -- Misc objects -------------------------------------------------------- */
+
+struct lj_sysprof_topframe {
+  uint8_t ffid;    /* FFUNC: fast function id. */
+  union { /* PROFILER: Data describing top frame of the guest stack. */
+    uint64_t raw;        /* Raw value for context save/restore. */
+    TValue *interp_base; /* LFUNC: Base of the executed coroutine. */
+    lua_CFunction cf;    /* CFUNC: Address of the C function. */
+  } guesttop;
+};
+
 /* -- State objects ------------------------------------------------------- */
 
 /* VM states. */
@@ -622,6 +634,7 @@ typedef struct GCState {
 
 /* Global state, shared by all threads of a Lua universe. */
 typedef struct global_State {
+  struct lj_sysprof_topframe top_frame;  /* top frame for sysprof */
   GCRef *strhash;	/* String hash table (hash chain anchors). */
   MSize strmask;	/* String hash mask (size of hash table - 1). */
   MSize strnum;		/* Number of strings in hash table. */

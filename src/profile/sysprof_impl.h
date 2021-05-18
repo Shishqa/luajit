@@ -6,7 +6,7 @@
 #include "../lj_obj.h"
 #include "../lj_timer.h"
 #include "../lj_wbuf.h"
-#include "../lj_sysprof.h"
+#include "../lmisclib.h"
 
 #include "iobuffer.h"
 
@@ -35,8 +35,8 @@ struct profiler_state {
   struct iobuffer iobuf;
   /* Buffer for backtrace output */
   void* backtrace_buf[BACKTRACE_BUF_SIZE];  
-  struct lj_sysprof_data data;            
-  struct lj_sysprof_options opt;
+  struct luam_sysprof_data data;            
+  struct luam_sysprof_options opt;
   struct lj_timer timer;
 };
 

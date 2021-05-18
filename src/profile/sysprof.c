@@ -17,11 +17,10 @@
 #include "../lj_trace.h"
 #endif
 
-#include "../luajit.h"
+#include "../lmisclib.h"
 
 #include "../lj_wbuf.h"
 
-#include "../lj_sysprof.h"
 #include "sysprof_impl.h"
 #include "iobuffer.h"
 
@@ -66,7 +65,7 @@ static void profile_signal_handler(int sig, siginfo_t *info, void *ctx) {
 }
 
 static int lj_sysprof_init(struct profiler_state *ps, global_State *g,
-                           const struct lj_sysprof_options *opt) 
+                           const struct luam_sysprof_options *opt) 
 {
   ps->g = g;
   ps->thread = pthread_self();
@@ -81,6 +80,7 @@ static int lj_sysprof_init(struct profiler_state *ps, global_State *g,
   if (opt->mode != PROFILE_DEFAULT) {
     int fd = open(opt->path, O_WRONLY | O_CREAT, 0644);
     if (-1 == fd) {
+      perror("open");
       return SYSPROF_ERRIO;
     }
     init_iobuf(&ps->iobuf, g, fd); 
@@ -92,7 +92,7 @@ static int lj_sysprof_init(struct profiler_state *ps, global_State *g,
 }
 
 static int lj_sysprof_validate(struct profiler_state *ps, 
-                               const struct lj_sysprof_options *opt) 
+                               const struct luam_sysprof_options *opt) 
 {
   if (ps->state != IDLE) {
     return SYSPROF_ERRRUN;
@@ -105,10 +105,10 @@ static int lj_sysprof_validate(struct profiler_state *ps,
 /* -- Internal profiling API --------------------------------------------- */
 
 /* Start profiling with default profling API */
-int lj_sysprof_start(lua_State *L, const struct lj_sysprof_options *opt) {
+int luaM_sysprof_start(lua_State *L, const struct luam_sysprof_options *opt) {
   struct profiler_state *ps = &profiler_state;
 
-  enum lj_sysprof_err status = SYSPROF_SUCCESS;
+  enum luam_sysprof_err status = SYSPROF_SUCCESS;
   if (SYSPROF_SUCCESS != (status = lj_sysprof_validate(ps, opt))) {
     return status;
   }
@@ -129,7 +129,7 @@ int lj_sysprof_start(lua_State *L, const struct lj_sysprof_options *opt) {
 }
 
 /* Stop profiling. */
-int lj_sysprof_stop(lua_State *L) {
+int luaM_sysprof_stop(lua_State *L) {
   struct profiler_state *ps = &profiler_state;
   global_State *g = ps->g;
 
@@ -149,6 +149,12 @@ int lj_sysprof_stop(lua_State *L) {
   }
 
   return SYSPROF_ERRRUN;
+}
+
+void luaM_sysprof_report(struct luam_sysprof_data *data) 
+{
+  const struct profiler_state *ps = &profiler_state;
+  memcpy(data, &ps->data, sizeof(ps->data));
 }
 
 #endif

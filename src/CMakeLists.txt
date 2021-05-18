@@ -400,7 +400,6 @@ install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/lua.hpp     # Convenience wrapper for C++
     ${CMAKE_CURRENT_SOURCE_DIR}/luajit.h    # LuaJIT-specific header
     ${CMAKE_CURRENT_SOURCE_DIR}/lmisclib.h  # Miscellaneous C API extensions
-    ${CMAKE_CURRENT_SOURCE_DIR}/lj_sysprof.h 
   DESTINATION ${LUAJIT_INCLUDEDIR}
   PERMISSIONS
     OWNER_READ OWNER_WRITE

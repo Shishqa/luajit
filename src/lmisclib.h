@@ -60,6 +60,75 @@ struct luam_Metrics {
 
 LUAMISC_API void luaM_metrics(lua_State *L, struct luam_Metrics *metrics);
 
+/* --- Sysprof ------------------------------------------------------------- */
+
+enum luam_sysprof_vmstate {
+  LUAM_VMST_INTERP,
+  LUAM_VMST_LFUNC,
+  LUAM_VMST_FFUNC,
+  LUAM_VMST_CFUNC,
+  LUAM_VMST_GC,
+  LUAM_VMST_EXIT,
+  LUAM_VMST_RECORD,
+  LUAM_VMST_OPT,
+  LUAM_VMST_ASM,
+  LUAM_VMST_TRACE,
+  /* Number of vmstates */
+  LUAM_VMST_COUNT
+};
+
+struct luam_sysprof_data {
+  /* Number of samples collected */
+  uint64_t samples;
+  /* Timer overrun */
+  uint64_t overruns;
+  /* Vmstate counters */
+  uint64_t vmstate[LUAM_VMST_COUNT];
+};
+
+/* Profiling mode:
+** > PROFILE_DEFAULT collects only data described in lj_sysprof_data,
+**   which can be collected with lj_sysprof_report after profiler stops.
+**   This mode doesn't use i/o for dumping data.
+** > PROFILE_LEAF collects counters described above and top frames of
+**   both guest and host stacks
+** > PROFILE_CALLGRAPH collects counters described above and callchains
+**   for both guest and host
+**
+**  Collected counters can be received via luaM_sysprof_report. Callchains
+**  are streamed to the file, specified in luam_sysprof_options and then
+**  can be parsed with luajit-parse-sysprof utility
+*/
+enum luam_sysprof_mode {
+  PROFILE_DEFAULT,
+  PROFILE_LEAF,
+  PROFILE_CALLGRAPH
+};
+
+/* Profiler options */
+struct luam_sysprof_options {
+  /* Sampling interval in msec */
+  uint32_t interval;
+  /* Profiling mode */
+  enum luam_sysprof_mode mode;
+  /* Output path */
+  const char *path;
+};
+
+enum luam_sysprof_err {
+  SYSPROF_SUCCESS = 0,
+  SYSPROF_ERRUSE, 
+  SYSPROF_ERRRUN, 
+  SYSPROF_ERRIO, 
+};
+
+LUAMISC_API int luaM_sysprof_start(lua_State *L,
+                                   const struct luam_sysprof_options *opt);
+
+LUAMISC_API int luaM_sysprof_stop(lua_State *L);
+
+LUAMISC_API void luaM_sysprof_report(struct luam_sysprof_data *data);
+
 #define LUAM_MISCLIBNAME "misc"
 LUALIB_API int luaopen_misc(lua_State *L);
 

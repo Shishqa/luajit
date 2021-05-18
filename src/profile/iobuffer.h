@@ -6,7 +6,9 @@
 
 #include "../lj_obj.h"
 
-enum IOBUFFER_CONSTANTS { DEFAULT_BUF_SIZE = 4096 };
+enum iobuffer_detail { 
+  DEFAULT_BUF_SIZE = 4096 
+};
 
 struct iobuffer {
   int fd;

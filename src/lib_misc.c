@@ -18,7 +18,6 @@
 #include "lj_memprof.h"
 #include "lj_obj.h"
 #include "lj_str.h"
-#include "lj_sysprof.h"
 #include "lj_tab.h"
 #include "lmisclib.h"
 #include "lua.h"
@@ -79,9 +78,9 @@ LJLIB_CF(misc_getmetrics) {
 static const char KEY_PROFILE_THREAD = 't';
 static const char KEY_PROFILE_FUNC = 'f';
 
-struct lj_sysprof_options parse_options(const char *filename,
-                                        const char *opts_str) {
-  struct lj_sysprof_options opts = {10, PROFILE_DEFAULT, "sysprof.bin"};
+struct luam_sysprof_options parse_options(const char *filename,
+                                          const char *opts_str) {
+  struct luam_sysprof_options opts = { 10, PROFILE_DEFAULT, "sysprof.bin" };
 
   if (opts_str) {
     while (*opts_str) {
@@ -136,12 +135,12 @@ LJLIB_CF(misc_sysprof_start) {
   setlightudV(&key, (void *)&KEY_PROFILE_FUNC);
   lj_gc_anybarriert(L, registry);
 
-  struct lj_sysprof_options opts = {};
+  struct luam_sysprof_options opts = {};
   const char *option_str = strdata(options);
   const char *filename_str = strdata(output);
   opts = parse_options(filename_str, option_str);
 
-  lj_sysprof_start(L, &opts);
+  luaM_sysprof_start(L, &opts);
   return 0;
 }
 
@@ -149,7 +148,7 @@ LJLIB_CF(misc_sysprof_start) {
 LJLIB_CF(misc_sysprof_stop) {
   GCtab *registry;
   TValue key;
-  lj_sysprof_stop(L);
+  luaM_sysprof_stop(L);
   registry = tabV(registry(L));
   setlightudV(&key, (void *)&KEY_PROFILE_THREAD);
   setnilV(lj_tab_set(L, registry, &key));

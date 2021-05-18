@@ -79,39 +79,47 @@ LJLIB_CF(misc_getmetrics) {
 static const char KEY_PROFILE_THREAD = 't';
 static const char KEY_PROFILE_FUNC = 'f';
 
-const struct lj_sysprof_options parse_options(char *opts_str) {
+struct lj_sysprof_options parse_options(const char *filename,
+                                        const char *opts_str) {
   struct lj_sysprof_options opts = {10, PROFILE_DEFAULT, "sysprof.bin"};
 
-  if (!opts_str) {
-    return opts;
+  if (opts_str) {
+    while (*opts_str) {
+      switch (*opts_str) {
+        case 'D': {
+          opts.mode = PROFILE_DEFAULT;
+          break;
+        }
+
+        case 'L': {
+          opts.mode = PROFILE_LEAF;
+          break;
+        }
+
+        case 'C': {
+          opts.mode = PROFILE_CALLGRAPH;
+          break;
+        }
+
+        case 'i': {
+          ++opts_str;
+          opts.interval = 0;
+          while (*opts_str >= '0' && *opts_str <= '9') {
+            opts.interval = opts.interval * 10 + (*opts_str++ - '0');
+          }
+
+          if (opts.interval <= 0) {
+            opts.interval = 1;
+          }
+          break;
+        }
+      }
+      ++opts_str;
+    }
   }
 
-  char *filename = strtok(opts_str, ";");
-  if (filename != NULL) {
+  if (filename) {
     opts.path = filename;
-  }
-
-  const char *interval_str = strtok(NULL, ";");
-  if (interval_str != NULL) {
-    opts.interval = strtol(interval_str, NULL, 10);
-  }
-
-  const char *mode_str = strtok(NULL, ";");
-  switch (*mode_str) {
-    case 'D': {
-      opts.mode = PROFILE_DEFAULT;
-      break;
-    }
-
-    case 'L': {
-      opts.mode = PROFILE_LEAF;
-      break;
-    }
-
-    case 'C': {
-      opts.mode = PROFILE_CALLGRAPH;
-      break;
-    }
   }
 
   return opts;
@@ -120,7 +128,8 @@ const struct lj_sysprof_options parse_options(char *opts_str) {
 // sysprof.start(options)
 LJLIB_CF(misc_sysprof_start) {
   GCtab *registry = tabV(registry(L));
-  GCstr *options = lj_lib_optstr(L, 1);
+  GCstr *output = lj_lib_optstr(L, 1);
+  GCstr *options = lj_lib_optstr(L, 2);
   TValue key;
   // Anchor thread and function in registry.
   setlightudV(&key, (void *)&KEY_PROFILE_THREAD);
@@ -128,14 +137,9 @@ LJLIB_CF(misc_sysprof_start) {
   lj_gc_anybarriert(L, registry);
 
   struct lj_sysprof_options opts = {};
-  const char *option_string = strdata(options);
-  char option_string_copy[2 * PATH_MAX] = "";
-  if (option_string != NULL) {
-    strcpy(option_string_copy, option_string);  // TODO get rid of copying
-    opts = parse_options(option_string_copy);
-  } else {
-    opts = parse_options(NULL);
-  }
+  const char *option_str = strdata(options);
+  const char *filename_str = strdata(output);
+  opts = parse_options(filename_str, option_str);
 
   lj_sysprof_start(L, &opts);
   return 0;

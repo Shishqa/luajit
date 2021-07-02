@@ -117,9 +117,10 @@ struct luam_sysprof_options {
 
 enum luam_sysprof_err {
   SYSPROF_SUCCESS = 0,
-  SYSPROF_ERRUSE, 
-  SYSPROF_ERRRUN, 
-  SYSPROF_ERRIO, 
+  SYSPROF_ERRUSE  = 1, 
+  SYSPROF_ERRRUN  = 2, 
+  SYSPROF_ERRMEM  = 3,
+  SYSPROF_ERRIO   = 4
 };
 
 LUAMISC_API int luaM_sysprof_start(lua_State *L,

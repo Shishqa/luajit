@@ -140,22 +140,98 @@ LJLIB_CF(misc_sysprof_start) {
   const char *filename_str = strdata(output);
   opts = parse_options(filename_str, option_str);
 
-  luaM_sysprof_start(L, &opts);
-  return 0;
+  enum luam_sysprof_err sysprof_status = 0;
+  sysprof_status = luaM_sysprof_start(L, &opts);
+
+  if (LJ_UNLIKELY(sysprof_status != PROFILE_SUCCESS)) {
+    switch (sysprof_status) {
+      case SYSPROF_ERRUSE:
+        lua_pushnil(L);
+        lua_pushstring(L, err2msg(LJ_ERR_PROF_MISUSE));
+        lua_pushinteger(L, EINVAL);
+        return 3;
+      case SYSPROF_ERRRUN:
+        lua_pushnil(L);
+        lua_pushstring(L, err2msg(LJ_ERR_PROF_ISRUNNING));
+        lua_pushinteger(L, EINVAL);
+        return 3;
+      case SYSPROF_ERRIO:
+        return luaL_fileresult(L, 0, opts.path);
+      default:
+        lua_assert(0);
+        return 0;
+    }
+  }
+  lua_pushboolean(L, 1);
+  return 1;
 }
 
 // profile.sysprof_stop()
 LJLIB_CF(misc_sysprof_stop) {
   GCtab *registry;
   TValue key;
-  luaM_sysprof_stop(L);
   registry = tabV(registry(L));
   setlightudV(&key, (void *)&KEY_PROFILE_THREAD);
   setnilV(lj_tab_set(L, registry, &key));
   setlightudV(&key, (void *)&KEY_PROFILE_FUNC);
   setnilV(lj_tab_set(L, registry, &key));
   lj_gc_anybarriert(L, registry);
-  return 0;
+
+  enum luam_sysprof_err sysprof_status = luaM_sysprof_stop(L);
+  if (LJ_UNLIKELY(sysprof_status != PROFILE_SUCCESS)) {
+    switch (sysprof_status) {
+      case SYSPROF_ERRUSE:
+        lua_pushnil(L);
+        lua_pushstring(L, err2msg(LJ_ERR_PROF_MISUSE));
+        lua_pushinteger(L, EINVAL);
+        return 3;
+      case SYSPROF_ERRRUN:
+        lua_pushnil(L);
+        lua_pushstring(L, err2msg(LJ_ERR_PROF_NOTRUNNING));
+        lua_pushinteger(L, EINVAL);
+        return 3;
+      case SYSPROF_ERRIO:
+        return luaL_fileresult(L, 0, NULL);
+      default:
+        lua_assert(0);
+        return 0;
+    }
+  }
+  lua_pushboolean(L, 1);
+  return 1;
+}
+
+// profile.sysprof_report()
+LJLIB_CF(misc_sysprof_report) {
+  struct luam_sysprof_data sysprof_data = {};
+  GCtab *data_tab = NULL;
+  GCtab *count_tab = NULL;
+
+  luaM_sysprof_report(&sysprof_data);
+
+  lua_createtable(L, 0, 3);
+  data_tab = tabV(L->top - 1);
+
+  setnumfield(L, data_tab, "samples", sysprof_data.samples);
+  setnumfield(L, data_tab, "overruns", sysprof_data.overruns);
+ 
+  lua_createtable(L, 0, LUAM_VMST_COUNT);
+  count_tab = tabV(L->top - 1);
+
+  setnumfield(L, count_tab, "INTERP", sysprof_data.vmstate[LUAM_VMST_INTERP]);
+  setnumfield(L, count_tab, "LFUNC",  sysprof_data.vmstate[LUAM_VMST_LFUNC]);
+  setnumfield(L, count_tab, "FFUNC",  sysprof_data.vmstate[LUAM_VMST_FFUNC]);
+  setnumfield(L, count_tab, "CFUNC",  sysprof_data.vmstate[LUAM_VMST_CFUNC]);
+  setnumfield(L, count_tab, "GC",     sysprof_data.vmstate[LUAM_VMST_GC]);
+  setnumfield(L, count_tab, "EXIT",   sysprof_data.vmstate[LUAM_VMST_EXIT]);
+  setnumfield(L, count_tab, "RECORD", sysprof_data.vmstate[LUAM_VMST_RECORD]);
+  setnumfield(L, count_tab, "OPT",    sysprof_data.vmstate[LUAM_VMST_OPT]);
+  setnumfield(L, count_tab, "ASM",    sysprof_data.vmstate[LUAM_VMST_ASM]);
+  setnumfield(L, count_tab, "TRACE",  sysprof_data.vmstate[LUAM_VMST_TRACE]);
+
+  lua_setfield(L, -2, "vmstate");
+
+  return 1;
 }
 
 /* ------------------------------------------------------------------------ */

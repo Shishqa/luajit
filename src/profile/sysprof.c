@@ -59,7 +59,7 @@ static void profile_signal_handler(int sig, siginfo_t *info, void *ctx) {
   uint32_t vmstate = _vmstate < LJ_VMST_TRACE ? _vmstate : LJ_VMST_TRACE;
   ps->data.vmstate[vmstate]++;
 
-  if (ps->opt.mode != PROFILE_DEFAULT) {
+  if (stream_is_needed(ps)) {
     stream_event(ps, vmstate);
   }
 }
@@ -77,10 +77,9 @@ static int lj_sysprof_init(struct profiler_state *ps, global_State *g,
   ps->data.overruns = 0;
   memset(ps->data.vmstate, 0, sizeof(ps->data.vmstate));
 
-  if (opt->mode != PROFILE_DEFAULT) {
+  if (stream_is_needed(ps)) {
     int fd = open(opt->path, O_WRONLY | O_CREAT, 0644);
     if (-1 == fd) {
-      perror("open");
       return SYSPROF_ERRIO;
     }
     init_iobuf(&ps->iobuf, g, fd); 
@@ -119,7 +118,9 @@ int luaM_sysprof_start(lua_State *L, const struct luam_sysprof_options *opt) {
   }
   ps->state = RUNNING;
 
-  stream_prologue(ps);
+  if (stream_is_needed(ps)) {
+    stream_prologue(ps);
+  }
 
   ps->timer.opt.interval = opt->interval;
   ps->timer.opt.handler = profile_signal_handler;
@@ -133,22 +134,28 @@ int luaM_sysprof_stop(lua_State *L) {
   struct profiler_state *ps = &profiler_state;
   global_State *g = ps->g;
 
-  if (G(L) == g) {
-    lj_timer_stop(&ps->timer);
+  if (ps->state != RUNNING) {
+    return SYSPROF_ERRRUN;
+  }
 
+  if (G(L) != g) {
+    return SYSPROF_ERRUSE;
+  }
+
+  lj_timer_stop(&ps->timer);
+
+  if (stream_is_needed(ps)) {
     stream_epilogue(ps);
     lj_wbuf_flush(&ps->buf);
     lj_wbuf_terminate(&ps->buf);
 
     close(ps->iobuf.fd);
     terminate_iobuf(&ps->iobuf);
-
-    ps->g = NULL;
-    ps->state = IDLE;
-    return SYSPROF_SUCCESS;
   }
 
-  return SYSPROF_ERRRUN;
+  ps->g = NULL;
+  ps->state = IDLE;
+  return SYSPROF_SUCCESS;
 }
 
 void luaM_sysprof_report(struct luam_sysprof_data *data) 

@@ -40,6 +40,8 @@ struct profiler_state {
   struct lj_timer timer;
 };
 
+int stream_is_needed(struct profiler_state *ps);
+
 void stream_prologue(struct profiler_state *ps);
 
 void stream_epilogue(struct profiler_state *ps);

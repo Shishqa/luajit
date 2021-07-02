@@ -16,6 +16,11 @@ static const uint8_t ljp_header[] = {'l', 'j', 'p', LJP_FORMAT_VERSION,
 
 enum { LJP_EPILOGUE_BYTE = 0xBB };
 
+int stream_is_needed(struct profiler_state *ps)
+{
+  return ps->opt.mode != PROFILE_DEFAULT;
+}
+
 void stream_prologue(struct profiler_state *ps) 
 {
   lj_prof_dump_symtab(&ps->buf, ps->g);

@@ -94,7 +94,6 @@ local function parse_lua_callchain(reader, event)
     if frame_header == FRAME.BOTTOM then
       break
     end
-    print(frame_header)
     frame_parsers[frame_header](reader, event)
   end
 end

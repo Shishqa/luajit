@@ -78,57 +78,40 @@ LJLIB_CF(misc_getmetrics) {
 static const char KEY_PROFILE_THREAD = 't';
 static const char KEY_PROFILE_FUNC = 'f';
 
-struct luam_sysprof_options parse_options(const char *filename,
-                                          const char *opts_str) {
-  struct luam_sysprof_options opts = { 10, PROFILE_DEFAULT, "sysprof.bin" };
-
-  if (opts_str) {
-    while (*opts_str) {
-      switch (*opts_str) {
-        case 'D': {
-          opts.mode = PROFILE_DEFAULT;
-          break;
-        }
-
-        case 'L': {
-          opts.mode = PROFILE_LEAF;
-          break;
-        }
-
-        case 'C': {
-          opts.mode = PROFILE_CALLGRAPH;
-          break;
-        }
-
-        case 'i': {
-          ++opts_str;
-          opts.interval = 0;
-          while (*opts_str >= '0' && *opts_str <= '9') {
-            opts.interval = opts.interval * 10 + (*opts_str++ - '0');
-          }
-
-          if (opts.interval <= 0) {
-            opts.interval = 1;
-          }
-          break;
-        }
-      }
-      ++opts_str;
-    }
+int parse_options(lua_State *L, struct luam_sysprof_options *opt) {
+  GCstr *mode = lj_lib_optstr(L, 1);
+  GCtab *options = lj_lib_checktab(L, 2);
+  
+  const char *mode_str = strdata(mode);
+  if (0 == strncmp(mode_str, "D", sizeof("D") - 1)) {
+    opt->mode = PROFILE_DEFAULT;
+  } else if (0 == strncmp(mode_str, "L", sizeof("L") - 1)) {
+    opt->mode = PROFILE_LEAF;
+  } else if (0 == strncmp(mode_str, "C", sizeof("C") - 1)) {
+    opt->mode = PROFILE_CALLGRAPH;
+  } else {
+    return SYSPROF_ERRUSE;
   }
 
-  if (filename) {
-    opts.path = filename;
+  opt->interval = 11; // default interval
+  cTValue *interval = lj_tab_getstr(options, lj_str_newlit(L, "interval"));
+  if (interval) {
+    opt->interval = lj_num2u64(numberVnum(interval));
   }
 
-  return opts;
+  opt->path = "sysprof.bin"; // default output file
+  cTValue *path = lj_tab_getstr(options, lj_str_newlit(L, "path"));
+  if (path) {
+    opt->path = strVdata(path);
+  }
+
+  return SYSPROF_SUCCESS;
 }
 
-// sysprof.start(options)
+// sysprof.start(mode, options)
 LJLIB_CF(misc_sysprof_start) {
+  enum luam_sysprof_err sysprof_status = SYSPROF_SUCCESS;
   GCtab *registry = tabV(registry(L));
-  GCstr *output = lj_lib_optstr(L, 1);
-  GCstr *options = lj_lib_optstr(L, 2);
   TValue key;
   // Anchor thread and function in registry.
   setlightudV(&key, (void *)&KEY_PROFILE_THREAD);
@@ -136,13 +119,23 @@ LJLIB_CF(misc_sysprof_start) {
   lj_gc_anybarriert(L, registry);
 
   struct luam_sysprof_options opts = {};
-  const char *option_str = strdata(options);
-  const char *filename_str = strdata(output);
-  opts = parse_options(filename_str, option_str);
+  sysprof_status = parse_options(L, &opts);
+  
+  if (LJ_UNLIKELY(sysprof_status != PROFILE_SUCCESS)) {
+    switch (sysprof_status) {
+      case SYSPROF_ERRUSE:
+        lua_pushnil(L);
+        lua_pushstring(L, err2msg(LJ_ERR_PROF_MISUSE));
+        lua_pushinteger(L, EINVAL);
+        return 3;
+      default:
+        lua_assert(0);
+        return 0;
+    }
+  }
 
-  enum luam_sysprof_err sysprof_status = 0;
   sysprof_status = luaM_sysprof_start(L, &opts);
-
+  
   if (LJ_UNLIKELY(sysprof_status != PROFILE_SUCCESS)) {
     switch (sysprof_status) {
       case SYSPROF_ERRUSE:

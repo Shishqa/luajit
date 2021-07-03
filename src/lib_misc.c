@@ -96,7 +96,11 @@ int parse_options(lua_State *L, struct luam_sysprof_options *opt) {
   opt->interval = 11; // default interval
   cTValue *interval = lj_tab_getstr(options, lj_str_newlit(L, "interval"));
   if (interval) {
-    opt->interval = lj_num2u64(numberVnum(interval));
+    int32_t signed_interval = numberVint(interval);
+    if (signed_interval < 1) {
+      return SYSPROF_ERRUSE;
+    }
+    opt->interval = signed_interval;
   }
 
   opt->path = "sysprof.bin"; // default output file

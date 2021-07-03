@@ -1,7 +1,7 @@
 local tap = require("tap")
 
 local test = tap.test("misc-sysprof-lapi")
-test:plan(8)
+test:plan(14)
 
 jit.off()
 jit.flush()
@@ -12,9 +12,12 @@ local bufread = require "utils.bufread"
 local sysprof = require "sysprof.parse"
 local symtab = require "utils.symtab"
 
+-- assert(0 == 1, os.getenv("LD_LIBRARY_PATH"))
+
+-- local sotab = require "utils.sotab"
+
 local TMP_BINFILE = arg[0]:gsub(".+/([^/]+)%.test%.lua$", "%.%1.sysprofdata.tmp.bin")
 local BAD_PATH = arg[0]:gsub(".+/([^/]+)%.test%.lua$", "%1/sysprofdata.tmp.bin")
-
 
 local function payload()
   local function fib(n)
@@ -23,11 +26,11 @@ local function payload()
     end
     return fib(n - 1) + fib(n - 2)
   end
-  return fib(15)
+  return fib(30)
 end
 
-local function generate_output(filename)
-  local res, err = misc.sysprof.start("C", {path = filename})
+local function generate_output(mode, opts)
+  local res, err = misc.sysprof.start(mode, opts)
   assert(res, err)
 
   payload()
@@ -36,10 +39,16 @@ local function generate_output(filename)
   assert(res, err)
 end
 
+local res, err, errno
 --## GENERAL ###############################################################--
 
+-- wrong profiling mode
+res, err, errno = misc.sysprof.start("A", {})
+test:ok(res == nil and err:match("profiler misuse"))
+test:ok(type(errno) == "number")
+
 -- already running
-local res, err, errno = misc.sysprof.start("D", {})
+res, err, errno = misc.sysprof.start("D", {})
 assert(res, err)
 
 res, err, errno = misc.sysprof.start("D", {})
@@ -55,19 +64,50 @@ test:ok(res == nil and err:match("profiler is not running"))
 test:ok(type(errno) == "number")
 
 -- bad path
-res, err, errno = misc.sysprof.start("C", {path = BAD_PATH})
+res, err, errno = misc.sysprof.start("C", { path = BAD_PATH })
 test:ok(res == nil and err:match("No such file or directory"))
+test:ok(type(errno) == "number")
+
+-- bad interval
+res, err, errno = misc.sysprof.start("C", { interval = -1 })
+test:ok(res == nil and err:match("profiler misuse"))
 test:ok(type(errno) == "number")
 
 --## DEFAULT MODE ##########################################################--
 
-local res, err, errno = misc.sysprof.start("D", {})
-test:ok(res == true and err == nil and errno == nil)
+res, err = pcall(generate_output, "D", { interval = 11 })
+if res == nil then
+  error(err)
+end
 
-res, err, errno = misc.sysprof.stop()
-test:ok(res == true and err == nil and errno == nil)
+local report = misc.sysprof.report()
+test:ok(report.samples > 0)  -- TODO: more accurate test?
+test:ok(report.vmstate.LFUNC > 0)
+test:ok(report.vmstate.TRACE == 0)
 
--- TODO: dump data to table
+-- with very big interval
+res, err = pcall(generate_output, "D", { interval = 1000 })
+if res == nil then
+  error(err)
+end
+
+report = misc.sysprof.report()
+test:ok(report.samples == 0)
+
+--## LEAF MODE #############################################################--
+
+res, err = pcall(generate_output, "L", { interval = 11, path = TMP_BINFILE })
+if res == nil then
+  os.remove(TMP_BINFILE)
+  error(err)
+end
+
+os.remove(TMP_BINFILE)
+
+-- local reader = bufread.new(TMP_BINFILE)
+
+-- local symtab = sy
+
 
 jit.on()
 os.exit(test:check() and 0 or 1)

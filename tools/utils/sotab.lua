@@ -1,6 +1,21 @@
 local bit = require "bit"
 local math = require "math"
 
+local ffi = require "ffi"
+local elf = require "utils.elf"
+
+ffi.cdef[[
+unsigned long getauxval(unsigned long type);
+]]
+
+AT_SYSINFO_EHDR = 33
+
+local SO_TYPE = {
+  SO_BIN = 1,
+  SO_VDSO = 2,
+  SO_SHARED = 3
+}
+
 local band = bit.band
 local string_format = string.format
 
@@ -11,56 +26,44 @@ local LJS_SYMTYPE_MASK = 0x03
 
 local SO_SHARED = 0
 
-local ffi = require "ffi"
-ffi.cdef[[
-struct sym_info {
-	uint64_t addr; /* Raw offset to symbol */
-	uint64_t size; /* Physical size in the SO*/
-	const char *name; /* Symbol */
-};
-
-struct vector {
-	struct sym_info **elems;
-	uint32_t size;
-	uint32_t capacity;
-};
-
-struct shared_obj {
-	const char *path; /* Full path to object */
-	const char *short_name; /* Basename */
-	uint64_t base; /* VA */
-	uint64_t size; /* Size from stat() function */
-	struct vector symbols; /* Symbols from nm */
-	uint8_t found;
-};
-
-void ujpp_demangle_free_symtab(struct shared_obj *so);
-struct shared_obj* load_so(const char* path, uint64_t base);
-void free(void* ptr);
-]]
-
-local demangle = ffi.load("sysprof_demangle")
-
 local M = {}
+
+local function determine_obj_type(path)
+  if path:match("vdso") then
+    return SO_TYPE.SO_VDSO
+  elseif path:match(".so") then
+    return SO_TYPE.SO_SHARED
+  else
+    return SO_TYPE.SO_BIN
+  end
+end
 
 -- Parse a single entry in a symtab: lfunc symbol.
 local function parse_shared_obj(reader, symtab)
   local so_addr = reader:read_uleb128()
   local so_path = reader:read_string()
 
-  -- print("so: "..so_path.." "..string.format('%d', so_addr))
-  local so = demangle.load_so(so_path, so_addr)
-  -- print(so[0].symbols.size)
+  local type = determine_obj_type(so_path)
+  local so = {
+    path = so_path,
+    base = so_addr,
+    symbols = {}
+  }
 
-  for i=0,so[0].symbols.size-1 do
-    local addr = tonumber(so[0].symbols.elems[i][0].addr + so[0].base)
-    local name = ffi.string(so[0].symbols.elems[i][0].name)
-    local size = tonumber(so[0].symbols.elems[i][0].size)
-    table.insert(symtab, { addr = addr, name = name, size = size })
+  if type ~= SO_TYPE.SO_VDSO then
+    elf.parse_file(so_path, so.symbols)
+  else
+    local vdso = ffi.cast("uint8_t*", ffi.C.getauxval(AT_SYSINFO_EHDR))
+    elf.parse_mem(vdso, so.symbols)
   end
 
-  demangle.ujpp_demangle_free_symtab(so)
-  ffi.C.free(so)
+  for k,v in pairs(so.symbols) do
+    table.insert(symtab, {
+      name = v.name,
+      addr = v.addr + so.base,
+      size = v.size
+    })
+  end
 end
 
 local parsers = {

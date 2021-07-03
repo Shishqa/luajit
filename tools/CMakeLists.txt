@@ -106,8 +106,6 @@ else()
   # executable, so the issue is resolved.
   configure_file(luajit-parse-sysprof.in luajit-parse-sysprof @ONLY ESCAPE_QUOTES)
 
-  add_subdirectory(utils/demangle)
-
   add_custom_target(tools-parse-sysprof EXCLUDE_FROM_ALL DEPENDS
     luajit-parse-sysprof
     sysprof/parse.lua
@@ -116,7 +114,7 @@ else()
     utils/bufread.lua
     utils/symtab.lua
     utils/sotab.lua
-    sysprof_demangle
+    utils/elf.lua
   )
   list(APPEND LUAJIT_TOOLS_DEPS tools-parse-sysprof)
 
@@ -130,20 +128,11 @@ else()
       WORLD_READ
     COMPONENT tools-parse-sysprof
   )
-  # XXX: better way of installing library?
-  install(FILES
-      ${CMAKE_CURRENT_SOURCE_DIR}/utils/demangle/libsysprof_demangle.so
-    DESTINATION ${LUAJIT_DATAROOTDIR}/utils
-    PERMISSIONS
-      OWNER_READ OWNER_WRITE
-      GROUP_READ
-      WORLD_READ
-    COMPONENT tools-parse-sysprof
-  )
   install(FILES
       ${CMAKE_CURRENT_SOURCE_DIR}/utils/bufread.lua
       ${CMAKE_CURRENT_SOURCE_DIR}/utils/symtab.lua
       ${CMAKE_CURRENT_SOURCE_DIR}/utils/sotab.lua
+      ${CMAKE_CURRENT_SOURCE_DIR}/utils/elf.lua
     DESTINATION ${LUAJIT_DATAROOTDIR}/utils
     PERMISSIONS
       OWNER_READ OWNER_WRITE

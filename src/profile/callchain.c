@@ -32,15 +32,13 @@ enum PROF_FRAME_TYPE {
   BOT_FRAME = 0x80 
 };
 
-void dump_lfunc(struct lj_wbuf *buf, GCfunc *fn, lua_State *L,
-                cTValue *nextframe) 
+void dump_lfunc(struct lj_wbuf *buf, GCfunc *fn) 
 {
-  lua_assert(buf && fn && L && nextframe);
-  BCLine line = lj_debug_frameline(L, fn, nextframe);
+  lua_assert(buf && fn);
   GCproto *pt = funcproto(fn);
   lj_wbuf_addbyte(buf, LFUNC);
   lj_wbuf_addu64(buf, (uintptr_t)pt);
-  lj_wbuf_addu64(buf, line > 0 ? line : 0);
+  lj_wbuf_addu64(buf, pt->firstline < 0 ? 0 : pt->firstline);
 }
 
 void dump_cfunc(struct lj_wbuf *buf, GCfunc *func) 

@@ -235,7 +235,7 @@ endif()
 # Turn on assertions for the Lua/C API to debug problems with
 # lua_* calls. This is rather slow -- use only while developing C
 # libraries/embeddings.
-option(LUA_USE_APICHECK "Assertions for the Lua/C API" OFF)
+option(LUA_USE_APICHECK "Assertions for the Lua/C API" ON)
 if(LUA_USE_APICHECK)
   AppendFlags(TARGET_C_FLAGS -DLUA_USE_APICHECK)
 endif()
@@ -243,7 +243,7 @@ endif()
 # Turn on assertions for the whole LuaJIT VM. This significantly
 # slows down everything. Use only if you suspect a problem with
 # LuaJIT itself.
-option(LUA_USE_ASSERT "Assertions for the whole LuaJIT VM" OFF)
+option(LUA_USE_ASSERT "Assertions for the whole LuaJIT VM" ON)
 if(LUA_USE_ASSERT)
   AppendFlags(TARGET_C_FLAGS -DLUA_USE_ASSERT)
 endif()

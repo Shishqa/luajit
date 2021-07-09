@@ -108,8 +108,8 @@ else()
 
   add_custom_target(tools-parse-sysprof EXCLUDE_FROM_ALL DEPENDS
     luajit-parse-sysprof
-    sysprof/parse.lua
-    sysprof/collapse.lua
+    sysprof/sysprof_parse.lua
+    sysprof/sysprof_collapse.lua
     sysprof.lua
     utils/bufread.lua
     utils/symtab.lua
@@ -119,8 +119,8 @@ else()
   list(APPEND LUAJIT_TOOLS_DEPS tools-parse-sysprof)
 
   install(FILES
-      ${CMAKE_CURRENT_SOURCE_DIR}/sysprof/parse.lua
-      ${CMAKE_CURRENT_SOURCE_DIR}/sysprof/collapse.lua
+      ${CMAKE_CURRENT_SOURCE_DIR}/sysprof/sysprof_parse.lua
+      ${CMAKE_CURRENT_SOURCE_DIR}/sysprof/sysprof_collapse.lua
     DESTINATION ${LUAJIT_DATAROOTDIR}/sysprof
     PERMISSIONS
       OWNER_READ OWNER_WRITE

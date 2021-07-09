@@ -1,4 +1,4 @@
-local parse = require "sysprof.parse"
+local parse = require "sysprof.sysprof_parse"
 local vmdef = require "jit.vmdef"
 local symtab = require "utils.symtab"
 local sotab = require "utils.sotab"

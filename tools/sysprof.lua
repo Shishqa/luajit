@@ -1,8 +1,8 @@
 local bufread = require "utils.bufread"
-local sysprof = require "sysprof.parse"
+local sysprof = require "sysprof.sysprof_parse"
 local symtab = require "utils.symtab"
 local sotab = require "utils.sotab"
-local misc = require "sysprof.collapse"
+local misc = require "sysprof.sysprof_collapse"
 
 local stdout, stderr = io.stdout, io.stderr
 local match, gmatch = string.match, string.gmatch

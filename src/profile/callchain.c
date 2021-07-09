@@ -81,7 +81,7 @@ void dump_callchain_lua(struct profiler_state *ps)
       lj_wbuf_addbyte(buf, CFUNC);
       lj_wbuf_addu64(buf, (uintptr_t)0xBADBEEF);
     } else if (isluafunc(fn)) {
-      dump_lfunc(buf, fn, L, nextframe);
+      dump_lfunc(buf, fn);
     } else if (isffunc(fn)) { /* Dump numbered builtins. */
       dump_ffunc(buf, fn);
     } else { /* Dump C function address. */

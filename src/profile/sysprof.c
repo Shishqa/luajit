@@ -122,9 +122,12 @@ int luaM_sysprof_start(lua_State *L, const struct luam_sysprof_options *opt) {
     stream_prologue(ps);
   }
 
-  ps->timer.opt.interval = opt->interval;
-  ps->timer.opt.handler = profile_signal_handler;
-  lj_timer_start(&ps->timer);
+  ps->timer.opt.signo = SIGPROF;
+  ps->timer.opt.usec = opt->interval;
+  ps->timer.opt.callback = profile_signal_handler;
+
+  if (SIGTIMER_SUCCESS != uj_sigtimer_start(&ps->timer))
+    return SYSPROF_ERRRUN;
 
   return SYSPROF_SUCCESS;
 }
@@ -142,7 +145,7 @@ int luaM_sysprof_stop(lua_State *L) {
     return SYSPROF_ERRUSE;
   }
 
-  lj_timer_stop(&ps->timer);
+  uj_sigtimer_stop(&ps->timer);
 
   if (stream_is_needed(ps)) {
     stream_epilogue(ps);

@@ -4,7 +4,7 @@
 #include <pthread.h>
 
 #include "../lj_obj.h"
-#include "../lj_timer.h"
+#include "../lj_sigtimer.h"
 #include "../lj_wbuf.h"
 #include "../lmisclib.h"
 
@@ -37,7 +37,7 @@ struct profiler_state {
   void* backtrace_buf[BACKTRACE_BUF_SIZE];  
   struct luam_sysprof_data data;            
   struct luam_sysprof_options opt;
-  struct lj_timer timer;
+  struct sigtimer timer;
 };
 
 int stream_is_needed(struct profiler_state *ps);

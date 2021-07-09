@@ -99,10 +99,10 @@ endif()
 AppendFlags(CMAKE_C_FLAGS -fomit-frame-pointer -fno-stack-protector)
 
 # Redefined to benefit from expanding macros in gdb.
-set(CMAKE_C_FLAGS_DEBUG "-g -ggdb3")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -DNDEBUG -g -ggdb3")
+set(CMAKE_C_FLAGS_DEBUG "-g -ggdb3 -lrt")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -DNDEBUG -g -ggdb3 -lrt")
 # Redefined since default cmake release optimization level is O3.
-set(CMAKE_C_FLAGS_RELEASE "-O2 -DNDEBUG")
+set(CMAKE_C_FLAGS_RELEASE "-O2 -DNDEBUG -lrt")
 
 AppendFlags(CMAKE_C_FLAGS -Wall)
 option(LUAJIT_ENABLE_WARNINGS "Build LuaJIT with warnings enabled" OFF)

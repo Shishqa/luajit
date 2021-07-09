@@ -71,6 +71,7 @@ make_source_list(SOURCES_PROFILER
     lj_profile.c
     lj_prof_symtab.c
     lj_timer.c
+    lj_sigtimer.c
     profile/sysprof.c
     profile/stream.c
     profile/callchain.c

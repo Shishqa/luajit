@@ -104,13 +104,13 @@ local function parse_host_callchain(reader, event)
   local header = reader:read_octet()
   assert(header == CALLCHAIN.HOST, "expected host callchain header, got "..header)
 
-  local callchain_size = reader:read_uleb128()
-
-  for i=1,callchain_size do
-    local addr = reader:read_uleb128()
-    event.host.callchain[i] = {
+  local addr = reader:read_uleb128()
+  while addr ~= 0 do
+   -- print(print(string.format("%18.0f", addr)))
+    table.insert(event.host.callchain, {	  
       addr = addr
-    }
+    })
+    addr = reader:read_uleb128()
   end
 end
 

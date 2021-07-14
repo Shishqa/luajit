@@ -285,7 +285,7 @@ add_dependencies(core_shared buildvm_output)
 
 # Compiling and linking library binaries (static, shared).
 
-list(APPEND TARGET_LIBS m)
+list(APPEND TARGET_LIBS m unwind)
 
 set(LIB_OBJECTS_STATIC
   $<TARGET_OBJECTS:vm_static>

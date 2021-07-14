@@ -49,7 +49,7 @@ void write_host(struct profiler_state *ps)
 void write_trace(struct profiler_state *ps) 
 {
   dump_callchain_trace(ps);
-  dump_callchain_lua(ps); // failing :( 
+  // dump_callchain_lua(ps); // failing :( 
   // todo: host?
 }
 

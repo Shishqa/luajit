@@ -108,8 +108,8 @@ STT_FUNC = 2
 local M = {}
 
 
-local function check_file(buf)
-  local hdr = ffi.cast("Elf64_Ehdr*", buf)
+local function check_file(reader)
+  local hdr = ffi.cast("Elf64_Ehdr*", reader._buf)
 
   if ELFMAG0 ~= hdr.e_ident[EI_MAG0] or   -- 0x7f
      ELFMAG1 ~= hdr.e_ident[EI_MAG1] or   -- 'E'
@@ -132,27 +132,28 @@ local function check_file(buf)
 end
 
 
-local function read_section_field(buf, ehdr, idx)
-  return ffi.cast("Elf64_Shdr*", buf + ehdr.e_shoff + idx * ehdr.e_shentsize)
+local function read_section_field(reader, ehdr, idx)
+  return ffi.cast("Elf64_Shdr*", reader._buf + ehdr.e_shoff)[idx]
 end
 
 
-local function get_section_name(buf, ehdr, sec)
-  local shstr = read_section_field(buf, ehdr, ehdr.e_shstrndx)
-  return ffi.string(buf + shstr.sh_offset + sec.sh_name)
+local function get_section_name(reader, ehdr, sec)
+  local shstr = read_section_field(reader, ehdr, ehdr.e_shstrndx)
+  return ffi.string(reader._buf + shstr.sh_offset + sec.sh_name)
 end
 
 
-local function get_strsect_offset(buf, lookup_name)
-  local ehdr = ffi.cast("Elf64_Ehdr*", buf)
+local function get_strsect_offset(reader, lookup_name)
+  local ehdr = ffi.cast("Elf64_Ehdr*", reader._buf)
 
   for i=1,math.min(ehdr.e_shnum, SHN_LORESERVE) do
-    local shdr = read_section_field(buf, ehdr, i)
+    local shdr = read_section_field(reader, ehdr, i)
 
-    local s_name = get_section_name(buf, ehdr, shdr)
+    local s_name = get_section_name(reader, ehdr, shdr)
+
     if s_name == lookup_name then
       if SHT_STRTAB == shdr.sh_type then
-        assert((buf + shdr.sh_offset)[0] == 0) -- TODO: find out, why
+        assert((reader._buf + shdr.sh_offset)[0] == 0) -- TODO: find out, why
         return shdr.sh_offset
       end
     end
@@ -162,7 +163,8 @@ local function get_strsect_offset(buf, lookup_name)
 end
 
 
-local function parse_symtab(buf, symbols, shdr, str_idx)
+local function parse_symtab(reader, symbols, shdr, str_idx)
+  local buf = ffi.cast("uint8_t*", reader._buf)
   local symtab = ffi.cast("uint8_t*", buf + shdr.sh_offset)
 
   -- XXX: how can we implement sizeof(*sym) paradigm?
@@ -189,34 +191,33 @@ local function parse_symtab(buf, symbols, shdr, str_idx)
 end
 
 
-local function iterate_sections(buf, symbols, sec_type, str_idx)
+local function iterate_sections(reader, symbols, sec_type, str_idx)
   if str_idx == nil then return end
 
-  local ehdr = ffi.cast("Elf64_Ehdr*", buf)
+  local ehdr = ffi.cast("Elf64_Ehdr*", reader._buf)
 
   for i=1,math.min(ehdr.e_shnum, SHN_LORESERVE) do
-    local shdr = read_section_field(buf, ehdr, i)
+    local shdr = read_section_field(reader, ehdr, i)
     if sec_type == shdr.sh_type then
-      parse_symtab(buf, symbols, shdr, str_idx)
+      parse_symtab(reader, symbols, shdr, str_idx)
     end
   end
 end
 
 
-function M.parse_mem(buf, symbols)
-  local strtab_idx = get_strsect_offset(buf, ".strtab")
-  local dynstr_idx = get_strsect_offset(buf, ".dynstr")
+function M.parse_mem(reader, symbols)
+  local strtab_idx = get_strsect_offset(reader, ".strtab")
+  local dynstr_idx = get_strsect_offset(reader, ".dynstr")
 
-  iterate_sections(buf, symbols, SHT_SYMTAB, strtab_idx)
-  iterate_sections(buf, symbols, SHT_DYNSYM, dynstr_idx)
+  iterate_sections(reader, symbols, SHT_SYMTAB, strtab_idx)
+  iterate_sections(reader, symbols, SHT_DYNSYM, dynstr_idx)
 end
 
 
 function M.parse_file(path, symbols)
   local reader = bufread.new(path)
-  local buf_data = ffi.cast("uint8_t*", reader._buf)
-  check_file(buf_data)
-  M.parse_mem(buf_data, symbols)
+  check_file(reader)
+  M.parse_mem(reader, symbols)
 end
 
 return M

@@ -9,12 +9,9 @@ jit.flush()
 local table_new = require "table.new"
 
 local bufread = require "utils.bufread"
-local sysprof = require "sysprof.parse"
+local sysprof = require "sysprof.sysprof_parse"
 local symtab = require "utils.symtab"
-
--- assert(0 == 1, os.getenv("LD_LIBRARY_PATH"))
-
--- local sotab = require "utils.sotab"
+local sotab = require "utils.sotab"
 
 local TMP_BINFILE = arg[0]:gsub(".+/([^/]+)%.test%.lua$", "%.%1.sysprofdata.tmp.bin")
 local BAD_PATH = arg[0]:gsub(".+/([^/]+)%.test%.lua$", "%1/sysprofdata.tmp.bin")
@@ -94,20 +91,20 @@ end
 report = misc.sysprof.report()
 test:ok(report.samples == 0)
 
---## LEAF MODE #############################################################--
+--## CALL MODE #############################################################--
 
-res, err = pcall(generate_output, "L", { interval = 11, path = TMP_BINFILE })
+res, err = pcall(generate_output, "C", { interval = 11, path = TMP_BINFILE })
 if res == nil then
   os.remove(TMP_BINFILE)
   error(err)
 end
 
+local reader = bufread.new(TMP_BINFILE)
+local lua_symbols = symtab.parse(reader)
+local host_symbols = sotab.parse(reader)
+local events = sysprof.parse(reader)
+
 os.remove(TMP_BINFILE)
-
--- local reader = bufread.new(TMP_BINFILE)
-
--- local symtab = sy
-
 
 jit.on()
 os.exit(test:check() and 0 or 1)

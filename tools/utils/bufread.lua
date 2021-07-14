@@ -16,8 +16,8 @@ local LINK_BIT = 0x80
 local PAYLOAD_MASK = 0x7f
 local SHIFT_STEP = 7
 
--- 10 Mb.
-local BUFFER_SIZE = 10 * 1024 * 1024
+-- 30 Mb.
+local BUFFER_SIZE = 30 * 1024 * 1024
 
 local M = {}
 

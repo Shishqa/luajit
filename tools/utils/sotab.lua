@@ -54,7 +54,7 @@ local function parse_shared_obj(reader, symtab)
     elf.parse_file(so_path, so.symbols)
   else
     local vdso = ffi.cast("uint8_t*", ffi.C.getauxval(AT_SYSINFO_EHDR))
-    elf.parse_mem(vdso, so.symbols)
+    elf.parse_mem({_buf = vdso}, so.symbols)
   end
 
   for k,v in pairs(so.symbols) do

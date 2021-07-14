@@ -19,6 +19,9 @@
 
 #include <execinfo.h>
 
+#define UNW_LOCAL_ONLY
+#include <libunwind.h>
+
 enum CALLCHAIN_TYPE { 
   CALLCHAIN_HOST, 
   CALLCHAIN_LUA, 
@@ -66,10 +69,9 @@ void dump_callchain_lua(struct profiler_state *ps)
 
   cTValue *top_frame = ps->g->top_frame.guesttop.interp_base - 1;
 
-  cTValue *frame, *nextframe, *bot = tvref(L->stack)+LJ_FR2;
+  cTValue *frame, *bot = tvref(L->stack)+LJ_FR2;
   /* Traverse frames backwards. */
-  for (nextframe = frame = top_frame; frame > bot; 
-       nextframe = frame, frame = frame_prev(frame)) {
+  for (frame = top_frame; frame > bot; frame = frame_prev(frame)) {
     if (frame_gc(frame) == obj2gco(L)) {
       continue;  /* Skip dummy frames. See lj_err_optype_call(). */
     } else if (frame_isvarg(frame)) {
@@ -94,25 +96,35 @@ void dump_callchain_lua(struct profiler_state *ps)
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-enum { PROFILER_STACK_DEPTH = 5 };
+enum { PROFILER_STACK_DEPTH = 4 };
 
 void dump_callchain_host(struct profiler_state *ps) {
+  int frame_no = 0;
   struct lj_wbuf *buf = &ps->buf;
-
-  const int depth = backtrace(ps->backtrace_buf, ps->opt.mode == PROFILE_LEAF
-                                                     ? PROFILER_STACK_DEPTH + 1
-                                                     : BACKTRACE_BUF_SIZE);
-  lua_assert(depth >= PROFILER_STACK_DEPTH);
-
+  unw_word_t sp = 0, old_sp = 0, ip = 0;
+  unw_context_t unw_context = {};
+  unw_getcontext(&unw_context);
+  unw_cursor_t unw_cur;
+  unw_init_local(&unw_cur, &unw_context);
+  int unw_status;
   lj_wbuf_addbyte(buf, CALLCHAIN_HOST);
-  lj_wbuf_addu64(buf, (uint64_t)(depth - PROFILER_STACK_DEPTH));
-
-  for (int i = PROFILER_STACK_DEPTH; i < depth; ++i) {
-    lj_wbuf_addu64(buf, (uintptr_t)ps->backtrace_buf[i]);
-    if (LJ_UNLIKELY(ps->opt.mode == PROFILE_LEAF)) {
+  while ((unw_status = unw_step(&unw_cur)) > 0) {
+    old_sp = sp;
+    unw_get_reg(&unw_cur, UNW_REG_IP, &ip);
+    unw_get_reg(&unw_cur, UNW_REG_SP, &sp);
+    if (sp == old_sp) {
+      fprintf(stderr, "unwinding error: previous frame "
+                "identical to this frame (corrupt stack?)");
       break;
     }
+    if (LJ_LIKELY(frame_no >= PROFILER_STACK_DEPTH)) {
+    	lj_wbuf_addu64(buf, (uintptr_t)ip);
+    }
+    ++frame_no;
   }
+  if (unw_status != 0)
+    fprintf(stderr, "unwinding error: %i", unw_status);
+  lj_wbuf_addu64(buf, (uintptr_t)NULL);
 }
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
@@ -121,12 +133,12 @@ void dump_callchain_trace(struct profiler_state *ps) {
   struct lj_wbuf *buf = &ps->buf;
 
   uint32_t traceno = ps->vmstate;
-  GCproto *pt = G2J(ps->g)->pt;
+  jit_State *J = G2J(ps->g);
 
   lj_wbuf_addbyte(buf, CALLCHAIN_TRACE);
   lj_wbuf_addu64(buf, traceno);
-  lj_wbuf_addu64(buf, (uintptr_t)pt);
-  lj_wbuf_addu64(buf, pt->firstline);
+  lj_wbuf_addu64(buf, (uintptr_t)J->prev_pt);
+  lj_wbuf_addu64(buf, J->prev_line);
 
-  // TODO: unwind trace
+  // TODO: unwind trace's inlined functions
 }

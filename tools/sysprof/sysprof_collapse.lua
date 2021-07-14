@@ -40,6 +40,7 @@ local function insert(name, node, is_leaf)
 end
 
 local function insert_lua_callchain(chain, lua, lua_symtab)
+  local trace_inserted = false	
   for _,fr in pairs(lua.callchain) do
     local name_lua = nil
 
@@ -50,13 +51,17 @@ local function insert_lua_callchain(chain, lua, lua_symtab)
         addr = fr.addr,
         line = fr.line
       })
-      if lua.trace.id ~= nil and lua.trace.addr == fr.addr and
-          lua.trace.line == fr.line then
+      if lua.trace.id ~= nil and lua.trace.addr == fr.addr then
         name_lua = 'TRACE_'..tostring(lua.trace.id)..'_'..name_lua
+	trace_inserted = true
       end
     end
 
     table.insert(chain, { name = name_lua })
+  end
+
+  if lua.trace.id ~= nil and not trace_inserted then
+    table.insert(chain, { name = 'TRACE_'..tostring(lua.trace.id) })
   end
 end
 

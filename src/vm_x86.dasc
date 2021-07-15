@@ -628,6 +628,9 @@ static void build_subroutines(BuildCtx *ctx)
   |  xor eax, eax			// Ok return status for vm_pcall.
   |
   |->vm_leave_unw:
+  |  set_vmstate INTERP // Guard for non-atomic VM context restoration
+  |  mov XCHGd, L:RBa->base
+  |  mov dword [DISPATCH+DISPATCH_GL(top_frame.guesttop)], XCHGd
   |  // DISPATCH required to set properly.
   |  restore_vmstate			// Caveat: on x64 uses XCHGd (r11d).
   |  restoreregs

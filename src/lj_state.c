@@ -56,6 +56,15 @@
 ** LJ_FR2: We need 2 more slots for the frame PC and the continuation PC.
 */
 
+static int state_stack_is_profiled(const lua_State *L)
+{
+  const TValue *guesttop = G(L)->top_frame.guesttop.interp_base;
+  const TValue *st = mref(L->stack, TValue);
+  const size_t sz = L->stacksize;
+
+  return ((size_t)(guesttop - st) <= sz);
+}
+
 /* Resize stack slots and adjust pointers in state. */
 static void resizestack(lua_State *L, MSize n)
 {
@@ -74,9 +83,13 @@ static void resizestack(lua_State *L, MSize n)
   ** to avoid inconsistent behaviour.
   */
   setvmstate(G(L), INTERP);
+  
+  int update_guesttop = state_stack_is_profiled(L);
+
   st = (TValue *)lj_mem_realloc(L, tvref(L->stack),
 				(MSize)(oldsize*sizeof(TValue)),
 				(MSize)(realsize*sizeof(TValue)));
+  
   setmref(L->stack, st);
   delta = (char *)st - (char *)oldst;
   setmref(L->maxstack, st + n);
@@ -89,6 +102,10 @@ static void resizestack(lua_State *L, MSize n)
   L->top = (TValue *)((char *)L->top + delta);
   for (up = gcref(L->openupval); up != NULL; up = gcnext(up))
     setmref(gco2uv(up)->v, (TValue *)((char *)uvval(gco2uv(up)) + delta));
+
+  if (update_guesttop) {
+    G(L)->top_frame.guesttop.interp_base = L->base;
+  }
 
   G(L)->vmstate = oldvmstate;
 }

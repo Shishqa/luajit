@@ -68,7 +68,6 @@ void dump_callchain_lua(struct profiler_state *ps)
   lua_assert(L != NULL);
 
   cTValue *top_frame = ps->g->top_frame.guesttop.interp_base - 1;
-
   cTValue *frame, *bot = tvref(L->stack)+LJ_FR2;
   /* Traverse frames backwards. */
   for (frame = top_frame; frame > bot; frame = frame_prev(frame)) {
